@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>技术 on CocaColf</title><link>https://cocacolf.github.io/tags/%E6%8A%80%E6%9C%AF/</link><description>Recent content in 技术 on CocaColf</description><generator>Hugo -- gohugo.io</generator><copyright>&amp;copy; 2020 CocaColf</copyright><lastBuildDate>Sun, 28 Apr 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/tags/%E6%8A%80%E6%9C%AF/index.xml" rel="self" type="application/rss+xml"/><item><title>Node.js Event Loop</title><link>https://cocacolf.github.io/blog/node.js-event-loop/</link><pubDate>Sun, 28 Apr 2019 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/node.js-event-loop/</guid><description>第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的博文，在这里做几点记录。
+什么是事件循环 event Demultiplexer来处理事件分发，同时把IO操作委托给硬件。它是一种抽象，各操作系统有自己的实现(Linux -&amp;gt; epoll,MacOS -&amp;gt; kqueue,Windows -&amp;gt; IOCP)。为了支持不同的操作系统中不同的IO操作，于是诞生了libuv。
+当IO操作被处理时，相对应的回调函数就被加入事件队列
+事件队列执行并清空事件队列
+循环上述过程
+事件队列 简化的事件循环的执行阶段顺序
+ 这里有几个要点:
+有两个中间过渡检查: process.nextTick 和 process.resolve，且前者优先级大于后者
+next tick 队列始终不为空导致IO饿死的问题
+Timers并不一定会准确执行，与CPU性能和当前所处的事件阶段有关
+两个很经典的例子
+// 执行顺序不能保证 setTimeout(function() { console.log(&amp;#39;setTimeout&amp;#39;); }, 0); setImmediate(function() { console.log(&amp;#39;setImmediate&amp;#39;); }); // setImmediate 一定在 setTimeout 之前执行 const fs = require(&amp;#39;fs&amp;#39;); fs.readFile(__filename, () =&amp;gt; { setTimeout(() =&amp;gt; { console.</description></item></channel></rss>
