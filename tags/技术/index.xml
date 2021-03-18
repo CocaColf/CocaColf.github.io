@@ -12,7 +12,14 @@ import VueRouter from &amp;#39;vue-router&amp;#39;; function handleRouterErr (me
 由于某些原因，没有使用任何样式库或者框架，使用原生js编写。
 以上是背景。
 思路 当然这个需求没有难点，最一般的方法，当然就是html字符串拼接，在大量的 js if else逻辑里，将不同的数据和html片段拼接起来。其中一个片段可能是这样：
-var data = {}; // 数据 var str = &amp;#39;&amp;#39;; // html拼接 if(data.</description></item><item><title>Node.js Event Loop</title><link>https://cocacolf.github.io/blog/node.js-event-loop/</link><pubDate>Sun, 28 Apr 2019 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/node.js-event-loop/</guid><description>第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的博文，在这里做几点记录。
+var data = {}; // 数据 var str = &amp;#39;&amp;#39;; // html拼接 if(data.</description></item><item><title>组内Node.js分享</title><link>https://cocacolf.github.io/blog/%E7%BB%84%E5%86%85node.js%E5%88%86%E4%BA%AB/</link><pubDate>Thu, 22 Aug 2019 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E7%BB%84%E5%86%85node.js%E5%88%86%E4%BA%AB/</guid><description>昨天得知今天要进行小组分享，但是我内心并不慌张。关于今天的分享“当我在学习Node时，我在学什么”，是自己一路学习的心得体会，即便临场讲述也能言之有物。
+聊什么  其实在两周前，我报名分享时，我打算自下而上来分享Node，从底层架构到上层应用，但后来我可以很明显的预知到这样分享的效果会不好。所以我改变了分享的内容，同时由于时间原因，这次分享侧重点并不是在讲述Node是什么，以及Node Api相关的东西，我也相信以大家的自学能力，入门并不是问题。我今天分享的是个人在初期学习Node的过程中的经历、感受。
+说说历史  我喜欢听故事也喜欢讲故事，所以我还是想从最开始说起。那是2009年，Ryan Dahl想写一个基于事件驱动和非阻塞IO的高性能服务器，他尝试了许多语言来构建，比如C、Lua、Haskell等，但由于自己hold不住或语言本身已存在这些东西，他最后瞄向了没有历史包袱的Javascript，从而创建了Node。但要注意的是，Node并不是一门语言，只是一个Javascript的运行时，可以理解为PythonVM之于Python，JVM之于Java。
+特点  异步IO和基于事件和回调函数。比如在Node中使用文件模块读取文件:
+fs.readFile(&amp;#39;./1.txt&amp;#39;, (err, data) =&amp;gt; { console.log(data); }); fs.readFile(&amp;#39;./2.txt&amp;#39;, (err, data) =&amp;gt; { console.log(data); }); 对于这种风格显然我们不陌生，比如：
+oneDom.addEventListener(&amp;#39;click&amp;#39;, function() { // do something }); $.get(&amp;#39;/url&amp;#39;, function(data) =&amp;gt; { // do something }) 这种异步IO，带来的好处就是性能更快，它的耗时取决于最慢的操作，但是也带来了成本，一是异步风格带来的理解成本，因为编码顺序和执行顺序并不一致；二是错误的处理。
+另外，我们可以看到代码风格是基于事件和回调函数风格，再举一个例子，使用原生http模块来接收post数据时：
+let str = &amp;#39;&amp;#39;; req.on(&amp;#39;data&amp;#39;, (trunk) =&amp;gt; { str += trunk; }); req.on(&amp;#39;end&amp;#39;, () =&amp;gt; { res.end(str); }); 这种基于事件的回调风格可以有一些优点，也是我个人最喜欢Node的地方，Don't Call Me, I Wll Call You。这种风格可以带来轻解耦，我们只需要关注事务即可。但是也有一些不足，比如每个事件事务相对独立，如果事件之间要彼此协作就不太方便。</description></item><item><title>Node.js Event Loop</title><link>https://cocacolf.github.io/blog/node.js-event-loop/</link><pubDate>Sun, 28 Apr 2019 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/node.js-event-loop/</guid><description>第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的博文，在这里做几点记录。
 什么是事件循环 event Demultiplexer来处理事件分发，同时把IO操作委托给硬件。它是一种抽象，各操作系统有自己的实现(Linux -&amp;gt; epoll,MacOS -&amp;gt; kqueue,Windows -&amp;gt; IOCP)。为了支持不同的操作系统中不同的IO操作，于是诞生了libuv。
 当IO操作被处理时，相对应的回调函数就被加入事件队列
 事件队列执行并清空事件队列
