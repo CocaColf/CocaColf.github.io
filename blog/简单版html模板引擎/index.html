@@ -1,141 +1,134 @@
-<!doctype html><html lang=en><script>var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?ca263fc43bf7a7d37bc412d545c44489";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();</script><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.78.1"><title>简单版html模板引擎 - CocaColf</title><meta name=description content="背景 功能中包含一个历史申请记录的显示页面，简笔画简单画了一下，如下所示：
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>简单版html模板引擎 - CocaColf</title><meta property="og:title" content="简单版html模板引擎 - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content="功能中包含一个历史申请记录的显示页面，简笔画简单画了一下，如下所示：
 不知道多久没写过字了，画下来的东西着实丑，既然不能绘色，那就绘声一下。 每一条记录对应一个面板，每一个面板上呈现着对应记录的信息。那么不同的审批状态，就有很多东西不一样：
- 数据，这个没得说 内容的样式。比如审批成功用绿色标识，失败是红色 操作。比如审批中，那么就有一个撤销申请的按钮；其他的状态，就没有这个按钮，但是有一个面板折叠的按钮 面板左侧有状态条，反映当前的状态，同时也是时间线的作用 。。。  这个历史申请的数据是用XML格式传递的，如下所示：
-<?xml version=\&#34;1.0\&#34; encoding=\&#34;utf-8\&#34;?> <Expansion> <Result>0</Result> <ApplicationRecord> <record id=&#34;1&#34; status=&#34;0&#34; apply_cpu=&#34;4&#34; apply_mem=&#34;8&#34; apply_disk=&#34;256&#34; apply_time=&#34;2019-10-14 20:00&#34; approve_time=&#34;2019-10-15 15:00&#34; apply_reason=&#34;卡得不能用了&#34; approve_reason=&#34;满足你&#34; admin_name=&#34;XXX&#34; admin_phone=&#34;2333333&#34; admin_email=&#34;test@gmail.com&#34;/> <record id=&#34;2&#34; status=&#34;2&#34; apply_cpu=&#34;4&#34; apply_mem=&#34;8&#34; apply_disk=&#34;256&#34; apply_time=&#34;2019-10-14 20:00&#34; approve_time=&#34;2019-10-15 15:00&#34; apply_reason=&#34;卡得不能用了&#34; approve_reason=&#34;那就继续卡着吧&#34; admin_name=&#34;XXX&#34; admin_phone=&#34;2333333&#34; admin_email=&#34;test@gmail.com&#34;/> </ApplicationRecord> </Expansion> 所以很明显，要去遍历解析这个XML，去循环创建面板，再根据每条记录里对应的字段，写上正确的内容以及设置不同的样式。
-由于某些原因，没有使用任何样式库或者框架，使用原生js编写。
-以上是背景。
-思路 当然这个需求没有难点，最一般的方法，当然就是html字符串拼接，在大量的 js if else逻辑里，将不同的数据和html片段拼接起来。其中一个片段可能是这样：
-var data = {}; // 数据 var str = ''; // html拼接  if(data."><link rel="shortcut icon" href=favicon.ico><link rel=stylesheet href=/css/ui.css><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Fira+Mono|Lato|Raleway"></head><body><header class="container no-print"><div class=u-header><nav class=bar><ul><li><a href=/><img class=icon-text src=/img/prev.svg></a></li><li><a href=/about>关于</a></li><li><a href=/readings>我读</a></li><li><a href=/tags>标签</a></li><li><a href=/tags/beyond-programming/>编程之外</a></li><li><a href=/tags/programming/>编程相关</a></li></ul></nav></div></header><main class=container><article><header><hgroup id=brand><h1>简单版html模板引擎</h1><h5><time datetime="2019-10-17 00:00:00 +0000 UTC">Oct 17, 2019</time>
-<span class=no-print>-
-<a href=/tags/%e6%8a%80%e6%9c%af>技术</a>
-<a href=/tags/programming>programming</a>
-<span></h5></hgroup><hr class=sep></header><h3 id=背景>背景</h3><p>功能中包含一个历史申请记录的显示页面，简笔画简单画了一下，如下所示：</p><p><img src=https://blog-1305900062.cos.ap-guangzhou.myqcloud.com/blog_pic/html%E6%A8%A1%E6%9D%BF%E5%BC%95%E6%93%8E.jpg alt=需求></p><p>不知道多久没写过字了，画下来的东西着实丑，既然不能绘色，那就绘声一下。
-每一条记录对应一个面板，每一个面板上呈现着对应记录的信息。那么不同的审批状态，就有很多东西不一样：</p><ol><li>数据，这个没得说</li><li>内容的样式。比如审批成功用绿色标识，失败是红色</li><li>操作。比如审批中，那么就有一个撤销申请的按钮；其他的状态，就没有这个按钮，但是有一个面板折叠的按钮</li><li>面板左侧有状态条，反映当前的状态，同时也是时间线的作用</li><li>。。。</li></ol><p>这个历史申请的数据是用XML格式传递的，如下所示：</p><div class=highlight><pre class=chroma><code class=language-xml data-lang=xml><span class=cp>&lt;?xml version=\&#34;1.0\&#34; encoding=\&#34;utf-8\&#34;?&gt;</span>
-	<span class=nt>&lt;Expansion&gt;</span>
-		<span class=nt>&lt;Result&gt;</span>0<span class=nt>&lt;/Result&gt;</span>
-		<span class=nt>&lt;ApplicationRecord&gt;</span>
-		<span class=nt>&lt;record</span> 
-			<span class=na>id=</span><span class=s>&#34;1&#34;</span> 
-			<span class=na>status=</span><span class=s>&#34;0&#34;</span> 
-			<span class=na>apply_cpu=</span><span class=s>&#34;4&#34;</span> 
-			<span class=na>apply_mem=</span><span class=s>&#34;8&#34;</span> 
-			<span class=na>apply_disk=</span><span class=s>&#34;256&#34;</span> 
-			<span class=na>apply_time=</span><span class=s>&#34;2019-10-14 20:00&#34;</span> 
-			<span class=na>approve_time=</span><span class=s>&#34;2019-10-15 15:00&#34;</span> 
-			<span class=na>apply_reason=</span><span class=s>&#34;卡得不能用了&#34;</span>
-			<span class=na>approve_reason=</span><span class=s>&#34;满足你&#34;</span>
-			<span class=na>admin_name=</span><span class=s>&#34;XXX&#34;</span> 
-			<span class=na>admin_phone=</span><span class=s>&#34;2333333&#34;</span> 
-			<span class=na>admin_email=</span><span class=s>&#34;test@gmail.com&#34;</span><span class=nt>/&gt;</span>
+[&amp;hellip;] 这个历史申请的数据是用XML格式传递的，如下所示：
+[&amp;hellip;] &amp;lt;?xml &amp;hellip;"><meta property="og:description" content="功能中包含一个历史申请记录的显示页面，简笔画简单画了一下，如下所示：
+不知道多久没写过字了，画下来的东西着实丑，既然不能绘色，那就绘声一下。 每一条记录对应一个面板，每一个面板上呈现着对应记录的信息。那么不同的审批状态，就有很多东西不一样：
+[&amp;hellip;] 这个历史申请的数据是用XML格式传递的，如下所示：
+[&amp;hellip;] &amp;lt;?xml &amp;hellip;"><meta name=twitter:image content="https://blog-1305900062.cos.ap-guangzhou.myqcloud.com/blog_pic/html%E6%A8%A1%E6%9D%BF%E5%BC%95%E6%93%8E.jpg"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/>Home</a></li><li><a href=/about/>About</a></li><li><a href=/tags/>Tags</a></li><li><a href=/index.xml>Subscribe</a></li></ul></nav></header><article class=main><header class=title><h1>简单版html模板引擎</h1><h3>2019-10-17</h3><hr></header><h3 id=背景>背景</h3><p>功能中包含一个历史申请记录的显示页面，简笔画简单画了一下，如下所示：</p><p><img src=https://blog-1305900062.cos.ap-guangzhou.myqcloud.com/blog_pic/html%E6%A8%A1%E6%9D%BF%E5%BC%95%E6%93%8E.jpg alt=需求></p><p>不知道多久没写过字了，画下来的东西着实丑，既然不能绘色，那就绘声一下。
+每一条记录对应一个面板，每一个面板上呈现着对应记录的信息。那么不同的审批状态，就有很多东西不一样：</p><ol><li>数据，这个没得说</li><li>内容的样式。比如审批成功用绿色标识，失败是红色</li><li>操作。比如审批中，那么就有一个撤销申请的按钮；其他的状态，就没有这个按钮，但是有一个面板折叠的按钮</li><li>面板左侧有状态条，反映当前的状态，同时也是时间线的作用</li><li>。。。</li></ol><p>这个历史申请的数据是用XML格式传递的，如下所示：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=color:#75715e>&lt;?xml version=\&#34;1.0\&#34; encoding=\&#34;utf-8\&#34;?&gt;</span>
+	<span style=color:#f92672>&lt;Expansion&gt;</span>
+		<span style=color:#f92672>&lt;Result&gt;</span>0<span style=color:#f92672>&lt;/Result&gt;</span>
+		<span style=color:#f92672>&lt;ApplicationRecord&gt;</span>
+		<span style=color:#f92672>&lt;record</span> 
+			<span style=color:#a6e22e>id=</span><span style=color:#e6db74>&#34;1&#34;</span> 
+			<span style=color:#a6e22e>status=</span><span style=color:#e6db74>&#34;0&#34;</span> 
+			<span style=color:#a6e22e>apply_cpu=</span><span style=color:#e6db74>&#34;4&#34;</span> 
+			<span style=color:#a6e22e>apply_mem=</span><span style=color:#e6db74>&#34;8&#34;</span> 
+			<span style=color:#a6e22e>apply_disk=</span><span style=color:#e6db74>&#34;256&#34;</span> 
+			<span style=color:#a6e22e>apply_time=</span><span style=color:#e6db74>&#34;2019-10-14 20:00&#34;</span> 
+			<span style=color:#a6e22e>approve_time=</span><span style=color:#e6db74>&#34;2019-10-15 15:00&#34;</span> 
+			<span style=color:#a6e22e>apply_reason=</span><span style=color:#e6db74>&#34;卡得不能用了&#34;</span>
+			<span style=color:#a6e22e>approve_reason=</span><span style=color:#e6db74>&#34;满足你&#34;</span>
+			<span style=color:#a6e22e>admin_name=</span><span style=color:#e6db74>&#34;XXX&#34;</span> 
+			<span style=color:#a6e22e>admin_phone=</span><span style=color:#e6db74>&#34;2333333&#34;</span> 
+			<span style=color:#a6e22e>admin_email=</span><span style=color:#e6db74>&#34;test@gmail.com&#34;</span><span style=color:#f92672>/&gt;</span>
 
-			<span class=nt>&lt;record</span> 
-			<span class=na>id=</span><span class=s>&#34;2&#34;</span> 
-			<span class=na>status=</span><span class=s>&#34;2&#34;</span> 
-			<span class=na>apply_cpu=</span><span class=s>&#34;4&#34;</span> 
-			<span class=na>apply_mem=</span><span class=s>&#34;8&#34;</span> 
-			<span class=na>apply_disk=</span><span class=s>&#34;256&#34;</span> 
-			<span class=na>apply_time=</span><span class=s>&#34;2019-10-14 20:00&#34;</span> 
-			<span class=na>approve_time=</span><span class=s>&#34;2019-10-15 15:00&#34;</span> 
-			<span class=na>apply_reason=</span><span class=s>&#34;卡得不能用了&#34;</span>
-			<span class=na>approve_reason=</span><span class=s>&#34;那就继续卡着吧&#34;</span>
-			<span class=na>admin_name=</span><span class=s>&#34;XXX&#34;</span> 
-			<span class=na>admin_phone=</span><span class=s>&#34;2333333&#34;</span> 
-			<span class=na>admin_email=</span><span class=s>&#34;test@gmail.com&#34;</span><span class=nt>/&gt;</span>
-		<span class=nt>&lt;/ApplicationRecord&gt;</span>
-	<span class=nt>&lt;/Expansion&gt;</span>
-</code></pre></div><p>所以很明显，要去遍历解析这个XML，去循环创建面板，再根据每条记录里对应的字段，写上正确的内容以及设置不同的样式。</p><p>由于某些原因，没有使用任何样式库或者框架，使用原生js编写。</p><p>以上是背景。</p><h3 id=思路>思路</h3><p>当然这个需求没有难点，最一般的方法，当然就是html字符串拼接，在大量的 js if else逻辑里，将不同的数据和html片段拼接起来。其中一个片段可能是这样：</p><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=kd>var</span> <span class=nx>data</span> <span class=o>=</span> <span class=p>{};</span>  <span class=c1>// 数据
-</span><span class=c1></span><span class=kd>var</span> <span class=nx>str</span> <span class=o>=</span> <span class=s1>&#39;&#39;</span><span class=p>;</span>   <span class=c1>// html拼接
-</span><span class=c1></span>
-<span class=k>if</span><span class=p>(</span><span class=nx>data</span><span class=p>.</span><span class=nx>status</span> <span class=o>===</span> <span class=s1>&#39;0&#39;</span><span class=p>)</span> <span class=p>{</span>
-    <span class=nx>str</span> <span class=o>+=</span> <span class=s1>&#39;&lt;p class=&#34;fail&#34;&gt;审核失败&lt;/p&gt;&#39;</span>
-<span class=p>}</span> <span class=k>else</span> <span class=k>if</span><span class=p>(</span><span class=nx>data</span><span class=p>.</span><span class=nx>status</span> <span class=o>===</span> <span class=s1>&#39;1&#39;</span><span class=p>)</span> <span class=p>{</span>
-    <span class=nx>str</span> <span class=o>+=</span> <span class=s1>&#39;&lt;p class=&#34;ing&#34;&gt;审核中&lt;/p&gt;&#39;</span>
-<span class=p>}</span> <span class=k>else</span> <span class=k>if</span>
-</code></pre></div><p>这种写法会让整个代码逻辑显得很乱，整个html片段也是分散的，不便于后期维护，别人看这份代码也不能够一眼看明白到底做了什么。这个需求如果是使用Vue这种现代化框架，可以良好的使用诸如 v-if 等指令来完成，然而这里并不能使用现代化框架来开发。</p><p>我的期望解决方式是：</p><ul><li><p>html是完整写在一起的，而不是分散拼接的</p></li><li><p>我只需要传入对应的数据，一个符合状态的面板就创建好了</p></li></ul><p>于是就编写了一个简单的模板引擎来解决这个问题，它对外是一个函数，使用的方式如下:</p><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=c1>// tpmplate是html片段，第二个参数是数据
-</span><span class=c1></span><span class=nx>tplEngine</span><span class=p>(</span><span class=nx>template</span><span class=p>,</span> <span class=p>{</span>
-    <span class=nx>status</span><span class=o>:</span> <span class=mi>1</span><span class=p>,</span>
-    <span class=nx>applyTime</span><span class=o>:</span> <span class=s1>&#39;2019-10-17&#39;</span><span class=p>,</span>
-    <span class=nx>applyCpu</span><span class=o>:</span> <span class=s1>&#39;XXX&#39;</span><span class=p>,</span>
-    <span class=p>......</span>
-<span class=p>});</span>
-</code></pre></div><p>那么html片段是这个样子的:</p><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=kd>var</span> <span class=nx>template</span> <span class=o>=</span> <span class=sb>`
-</span><span class=sb>    &lt;div class=&#34;&lt;% statusClass %&gt;&#34; &gt; &lt;%statusWords %&gt; &lt;/div&gt;
-</span><span class=sb>    &lt;span&gt;申请时间: &lt;% applyTime %&gt; &lt;/span&gt;
-</span><span class=sb>
-</span><span class=sb>    &lt;% if(this.status !== 1) {%&gt;
-</span><span class=sb>        &lt;div&gt;
-</span><span class=sb>            撤销申请
-</span><span class=sb>        &lt;/div&gt;
-</span><span class=sb>    &lt;% } %&gt;
-</span><span class=sb>
-</span><span class=sb>    &lt;% else {%&gt;
-</span><span class=sb>        &lt;div&gt;
-</span><span class=sb>            折叠面板的按钮
-</span><span class=sb>        &lt;/div&gt;
-</span><span class=sb>    &lt;% } %&gt;
-</span><span class=sb>`</span>
-</code></pre></div><p>虽然嵌入了一些奇怪的东西，但是很明显：</p><ol><li>html是完整的写在一起的，一眼就能看懂</li><li>嵌入的部分是数据和js语法，不影响阅读习惯，逻辑很清晰</li><li>内容很灵活的根据传入的数据改变而改变，不需要自己去做其他任何操作</li></ol><h3 id=结果>结果</h3><p>通过这样封装，那么最后完成这个需求的代码就很简单和清晰了,伪代码如下:</p><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=c1>// 定义好模板
-</span><span class=c1></span><span class=kd>var</span> <span class=nx>tpl</span> <span class=o>=</span> <span class=s1>&#39;&lt;div&gt;.......&#39;</span><span class=p>;</span>
+			<span style=color:#f92672>&lt;record</span> 
+			<span style=color:#a6e22e>id=</span><span style=color:#e6db74>&#34;2&#34;</span> 
+			<span style=color:#a6e22e>status=</span><span style=color:#e6db74>&#34;2&#34;</span> 
+			<span style=color:#a6e22e>apply_cpu=</span><span style=color:#e6db74>&#34;4&#34;</span> 
+			<span style=color:#a6e22e>apply_mem=</span><span style=color:#e6db74>&#34;8&#34;</span> 
+			<span style=color:#a6e22e>apply_disk=</span><span style=color:#e6db74>&#34;256&#34;</span> 
+			<span style=color:#a6e22e>apply_time=</span><span style=color:#e6db74>&#34;2019-10-14 20:00&#34;</span> 
+			<span style=color:#a6e22e>approve_time=</span><span style=color:#e6db74>&#34;2019-10-15 15:00&#34;</span> 
+			<span style=color:#a6e22e>apply_reason=</span><span style=color:#e6db74>&#34;卡得不能用了&#34;</span>
+			<span style=color:#a6e22e>approve_reason=</span><span style=color:#e6db74>&#34;那就继续卡着吧&#34;</span>
+			<span style=color:#a6e22e>admin_name=</span><span style=color:#e6db74>&#34;XXX&#34;</span> 
+			<span style=color:#a6e22e>admin_phone=</span><span style=color:#e6db74>&#34;2333333&#34;</span> 
+			<span style=color:#a6e22e>admin_email=</span><span style=color:#e6db74>&#34;test@gmail.com&#34;</span><span style=color:#f92672>/&gt;</span>
+		<span style=color:#f92672>&lt;/ApplicationRecord&gt;</span>
+	<span style=color:#f92672>&lt;/Expansion&gt;</span>
+</code></pre></div><p>所以很明显，要去遍历解析这个XML，去循环创建面板，再根据每条记录里对应的字段，写上正确的内容以及设置不同的样式。</p><p>由于某些原因，没有使用任何样式库或者框架，使用原生js编写。</p><p>以上是背景。</p><h3 id=思路>思路</h3><p>当然这个需求没有难点，最一般的方法，当然就是html字符串拼接，在大量的 js if else逻辑里，将不同的数据和html片段拼接起来。其中一个片段可能是这样：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>data</span> <span style=color:#f92672>=</span> {};  <span style=color:#75715e>// 数据
+</span><span style=color:#75715e></span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>str</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&#39;</span>;   <span style=color:#75715e>// html拼接
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>if</span>(<span style=color:#a6e22e>data</span>.<span style=color:#a6e22e>status</span> <span style=color:#f92672>===</span> <span style=color:#e6db74>&#39;0&#39;</span>) {
+    <span style=color:#a6e22e>str</span> <span style=color:#f92672>+=</span> <span style=color:#e6db74>&#39;&lt;p class=&#34;fail&#34;&gt;审核失败&lt;/p&gt;&#39;</span>
+} <span style=color:#66d9ef>else</span> <span style=color:#66d9ef>if</span>(<span style=color:#a6e22e>data</span>.<span style=color:#a6e22e>status</span> <span style=color:#f92672>===</span> <span style=color:#e6db74>&#39;1&#39;</span>) {
+    <span style=color:#a6e22e>str</span> <span style=color:#f92672>+=</span> <span style=color:#e6db74>&#39;&lt;p class=&#34;ing&#34;&gt;审核中&lt;/p&gt;&#39;</span>
+} <span style=color:#66d9ef>else</span> <span style=color:#66d9ef>if</span>
+</code></pre></div><p>这种写法会让整个代码逻辑显得很乱，整个html片段也是分散的，不便于后期维护，别人看这份代码也不能够一眼看明白到底做了什么。这个需求如果是使用Vue这种现代化框架，可以良好的使用诸如 v-if 等指令来完成，然而这里并不能使用现代化框架来开发。</p><p>我的期望解决方式是：</p><ul><li><p>html是完整写在一起的，而不是分散拼接的</p></li><li><p>我只需要传入对应的数据，一个符合状态的面板就创建好了</p></li></ul><p>于是就编写了一个简单的模板引擎来解决这个问题，它对外是一个函数，使用的方式如下:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// tpmplate是html片段，第二个参数是数据
+</span><span style=color:#75715e></span><span style=color:#a6e22e>tplEngine</span>(<span style=color:#a6e22e>template</span>, {
+    <span style=color:#a6e22e>status</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>1</span>,
+    <span style=color:#a6e22e>applyTime</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;2019-10-17&#39;</span>,
+    <span style=color:#a6e22e>applyCpu</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;XXX&#39;</span>,
+    ......
+});
+</code></pre></div><p>那么html片段是这个样子的:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>template</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`
+</span><span style=color:#e6db74>    &lt;div class=&#34;&lt;% statusClass %&gt;&#34; &gt; &lt;%statusWords %&gt; &lt;/div&gt;
+</span><span style=color:#e6db74>    &lt;span&gt;申请时间: &lt;% applyTime %&gt; &lt;/span&gt;
+</span><span style=color:#e6db74>
+</span><span style=color:#e6db74>    &lt;% if(this.status !== 1) {%&gt;
+</span><span style=color:#e6db74>        &lt;div&gt;
+</span><span style=color:#e6db74>            撤销申请
+</span><span style=color:#e6db74>        &lt;/div&gt;
+</span><span style=color:#e6db74>    &lt;% } %&gt;
+</span><span style=color:#e6db74>
+</span><span style=color:#e6db74>    &lt;% else {%&gt;
+</span><span style=color:#e6db74>        &lt;div&gt;
+</span><span style=color:#e6db74>            折叠面板的按钮
+</span><span style=color:#e6db74>        &lt;/div&gt;
+</span><span style=color:#e6db74>    &lt;% } %&gt;
+</span><span style=color:#e6db74>`</span>
+</code></pre></div><p>虽然嵌入了一些奇怪的东西，但是很明显：</p><ol><li>html是完整的写在一起的，一眼就能看懂</li><li>嵌入的部分是数据和js语法，不影响阅读习惯，逻辑很清晰</li><li>内容很灵活的根据传入的数据改变而改变，不需要自己去做其他任何操作</li></ol><h3 id=结果>结果</h3><p>通过这样封装，那么最后完成这个需求的代码就很简单和清晰了,伪代码如下:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// 定义好模板
+</span><span style=color:#75715e></span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>tpl</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;&lt;div&gt;.......&#39;</span>;
 
-<span class=c1>// 解析数据，得到所有的申请记录 data
-</span><span class=c1></span><span class=kd>var</span> <span class=nx>data</span> <span class=o>=</span> <span class=nx>parseXML</span><span class=p>();</span>
+<span style=color:#75715e>// 解析数据，得到所有的申请记录 data
+</span><span style=color:#75715e></span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>data</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>parseXML</span>();
 
-<span class=c1>// 遍历data创建面板
-</span><span class=c1></span><span class=nx>data</span><span class=p>.</span><span class=nx>each</span><span class=p>(</span><span class=kd>function</span><span class=p>(</span><span class=nx>index</span><span class=p>,</span> <span class=nx>item</span><span class=p>)</span> <span class=p>{</span>
-    <span class=c1>// 这一行代码就得到了创建好的面板
-</span><span class=c1></span>    <span class=kd>var</span> <span class=nx>panel</span> <span class=o>=</span> <span class=nx>tplEngine</span><span class=p>(</span><span class=nx>tpl</span><span class=p>,</span> <span class=nx>item</span><span class=p>);</span>
+<span style=color:#75715e>// 遍历data创建面板
+</span><span style=color:#75715e></span><span style=color:#a6e22e>data</span>.<span style=color:#a6e22e>each</span>(<span style=color:#66d9ef>function</span>(<span style=color:#a6e22e>index</span>, <span style=color:#a6e22e>item</span>) {
+    <span style=color:#75715e>// 这一行代码就得到了创建好的面板
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>panel</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>tplEngine</span>(<span style=color:#a6e22e>tpl</span>, <span style=color:#a6e22e>item</span>);
 
-    <span class=nx>$</span><span class=p>(</span><span class=s1>&#39;pannel-container&#39;</span><span class=p>).</span><span class=nx>append</span><span class=p>(</span><span class=nx>panel</span><span class=p>);</span>
-<span class=p>});</span>
-</code></pre></div><h3 id=实现原理>实现原理</h3><p>使用正则表达式，讲模板数据、js语法关键字、普通字符串匹配出来，然后把他们组成成Javascript语句。这些语句组成起来就是一个函数的具体实现，然后把这个函数的作用域设置在我们传入的数据对象上。</p><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=cm>/**
-</span><span class=cm> * html模板转换
-</span><span class=cm> * @param {String} tpl html模板
-</span><span class=cm> * @param {Object} data 数据
-</span><span class=cm> */</span>
-<span class=kd>var</span> <span class=nx>tplEngine</span> <span class=o>=</span> <span class=kd>function</span><span class=p>(</span><span class=nx>tpl</span><span class=p>,</span> <span class=nx>data</span><span class=p>)</span> <span class=p>{</span>
+    <span style=color:#a6e22e>$</span>(<span style=color:#e6db74>&#39;pannel-container&#39;</span>).<span style=color:#a6e22e>append</span>(<span style=color:#a6e22e>panel</span>);
+});
+</code></pre></div><h3 id=实现原理>实现原理</h3><p>使用正则表达式，讲模板数据、js语法关键字、普通字符串匹配出来，然后把他们组成成Javascript语句。这些语句组成起来就是一个函数的具体实现，然后把这个函数的作用域设置在我们传入的数据对象上。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>/**
+</span><span style=color:#75715e> * html模板转换
+</span><span style=color:#75715e> * @param {String} tpl html模板
+</span><span style=color:#75715e> * @param {Object} data 数据
+</span><span style=color:#75715e> */</span>
+<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>tplEngine</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(<span style=color:#a6e22e>tpl</span>, <span style=color:#a6e22e>data</span>) {
 
-    <span class=kd>var</span> <span class=nx>templateBoundary</span> <span class=o>=</span> <span class=sr>/&lt;%([^%]+)?%&gt;/g</span><span class=p>,</span>     <span class=c1>// 模板边界 &lt;% %&gt;
-</span><span class=c1></span>        <span class=nx>jsKeyWord</span> <span class=o>=</span> <span class=sr>/(^( )?(for|if|else|switch|case|break|{|}))(.*)?/g</span><span class=p>,</span>     <span class=c1>// js关键字匹配出来
-</span><span class=c1></span>        <span class=nx>tplToCode</span> <span class=o>=</span> <span class=s1>&#39;var r=[];\n&#39;</span><span class=p>,</span>  <span class=c1>// html转化为js代码
-</span><span class=c1></span>        <span class=nx>matchedLen</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>     <span class=c1>// 已经处理的长度
-</span><span class=c1></span>
-    <span class=kd>var</span> <span class=nx>_addToCode</span> <span class=o>=</span> <span class=kd>function</span><span class=p>(</span><span class=nx>elememt</span><span class=p>,</span> <span class=nx>isJs</span><span class=p>)</span> <span class=p>{</span>
+    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>templateBoundary</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>/&lt;%([^%]+)?%&gt;/g</span>,     <span style=color:#75715e>// 模板边界 &lt;% %&gt;
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>jsKeyWord</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>/(^( )?(for|if|else|switch|case|break|{|}))(.*)?/g</span>,     <span style=color:#75715e>// js关键字匹配出来
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>tplToCode</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;var r=[];\n&#39;</span>,  <span style=color:#75715e>// html转化为js代码
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>matchedLen</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;     <span style=color:#75715e>// 已经处理的长度
+</span><span style=color:#75715e></span>
+    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>_addToCode</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(<span style=color:#a6e22e>elememt</span>, <span style=color:#a6e22e>isJs</span>) {
 
-        <span class=c1>// 去除空字符串的影响，否则会导致一些语法，比如 else 没有和if连接起来，出现报错
-</span><span class=c1></span>        <span class=k>if</span><span class=p>(</span><span class=nx>elememt</span> <span class=o>===</span> <span class=s1>&#39;&#39;</span><span class=p>)</span> <span class=k>return</span><span class=p>;</span>
+        <span style=color:#75715e>// 去除空字符串的影响，否则会导致一些语法，比如 else 没有和if连接起来，出现报错
+</span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span>(<span style=color:#a6e22e>elememt</span> <span style=color:#f92672>===</span> <span style=color:#e6db74>&#39;&#39;</span>) <span style=color:#66d9ef>return</span>;
 
-        <span class=c1>// 组装成对应的js语句
-</span><span class=c1></span>        <span class=k>if</span><span class=p>(</span><span class=nx>isJs</span><span class=p>)</span> <span class=p>{</span>
-            <span class=k>if</span><span class=p>(</span><span class=nx>elememt</span><span class=p>.</span><span class=nx>match</span><span class=p>(</span><span class=nx>jsKeyWord</span><span class=p>))</span> <span class=p>{</span>
-                <span class=nx>tplToCode</span> <span class=o>+=</span>  <span class=nx>elememt</span> <span class=o>+</span> <span class=s1>&#39;\n&#39;</span><span class=p>;</span>
-            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
-                <span class=nx>tplToCode</span> <span class=o>+=</span> <span class=s1>&#39;r.push(&#39;</span> <span class=o>+</span> <span class=nx>elememt</span> <span class=o>+</span> <span class=s1>&#39;);\n&#39;</span><span class=p>;</span>
-            <span class=p>}</span>
-        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
-            <span class=nx>tplToCode</span> <span class=o>+=</span> <span class=s1>&#39;r.push(&#34;&#39;</span> <span class=o>+</span> <span class=nx>elememt</span><span class=p>.</span><span class=nx>replace</span><span class=p>(</span><span class=sr>/&#34;/g</span><span class=p>,</span> <span class=s1>&#39;\\&#34;&#39;</span><span class=p>)</span> <span class=o>+</span> <span class=s1>&#39;&#34;);\n&#39;</span><span class=p>;</span>
-        <span class=p>}</span>
-    <span class=p>};</span>
+        <span style=color:#75715e>// 组装成对应的js语句
+</span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span>(<span style=color:#a6e22e>isJs</span>) {
+            <span style=color:#66d9ef>if</span>(<span style=color:#a6e22e>elememt</span>.<span style=color:#a6e22e>match</span>(<span style=color:#a6e22e>jsKeyWord</span>)) {
+                <span style=color:#a6e22e>tplToCode</span> <span style=color:#f92672>+=</span>  <span style=color:#a6e22e>elememt</span> <span style=color:#f92672>+</span> <span style=color:#e6db74>&#39;\n&#39;</span>;
+            } <span style=color:#66d9ef>else</span> {
+                <span style=color:#a6e22e>tplToCode</span> <span style=color:#f92672>+=</span> <span style=color:#e6db74>&#39;r.push(&#39;</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>elememt</span> <span style=color:#f92672>+</span> <span style=color:#e6db74>&#39;);\n&#39;</span>;
+            }
+        } <span style=color:#66d9ef>else</span> {
+            <span style=color:#a6e22e>tplToCode</span> <span style=color:#f92672>+=</span> <span style=color:#e6db74>&#39;r.push(&#34;&#39;</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>elememt</span>.<span style=color:#a6e22e>replace</span>(<span style=color:#e6db74>/&#34;/g</span>, <span style=color:#e6db74>&#39;\\&#34;&#39;</span>) <span style=color:#f92672>+</span> <span style=color:#e6db74>&#39;&#34;);\n&#39;</span>;
+        }
+    };
 
-    <span class=k>while</span> <span class=p>(</span><span class=nx>match</span> <span class=o>=</span> <span class=nx>templateBoundary</span><span class=p>.</span><span class=nx>exec</span><span class=p>(</span><span class=nx>tpl</span><span class=p>))</span> <span class=p>{</span>
-        <span class=c1>// 不存在模板(不需要处理)的部分
-</span><span class=c1></span>        <span class=nx>_addToCode</span><span class=p>(</span><span class=nx>tpl</span><span class=p>.</span><span class=nx>slice</span><span class=p>(</span><span class=nx>matchedLen</span><span class=p>,</span> <span class=nx>match</span><span class=p>.</span><span class=nx>index</span><span class=p>));</span>
+    <span style=color:#66d9ef>while</span> (<span style=color:#a6e22e>match</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>templateBoundary</span>.<span style=color:#a6e22e>exec</span>(<span style=color:#a6e22e>tpl</span>)) {
+        <span style=color:#75715e>// 不存在模板(不需要处理)的部分
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>_addToCode</span>(<span style=color:#a6e22e>tpl</span>.<span style=color:#a6e22e>slice</span>(<span style=color:#a6e22e>matchedLen</span>, <span style=color:#a6e22e>match</span>.<span style=color:#a6e22e>index</span>));
 
-        <span class=c1>// 不存在关键字则认为是变量替换
-</span><span class=c1></span>        <span class=nx>jsKeyWord</span><span class=p>.</span><span class=nx>test</span><span class=p>(</span><span class=nx>match</span><span class=p>[</span><span class=mi>1</span><span class=p>])</span> <span class=o>?</span> <span class=nx>_addToCode</span><span class=p>(</span><span class=nx>match</span><span class=p>[</span><span class=mi>1</span><span class=p>],</span> <span class=kc>true</span><span class=p>)</span> <span class=o>:</span> <span class=nx>_addToCode</span><span class=p>(</span><span class=s2>&#34;this.&#34;</span> <span class=o>+</span> <span class=nx>match</span><span class=p>[</span><span class=mi>1</span><span class=p>],</span> <span class=kc>true</span><span class=p>);</span>
+        <span style=color:#75715e>// 不存在关键字则认为是变量替换
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>jsKeyWord</span>.<span style=color:#a6e22e>test</span>(<span style=color:#a6e22e>match</span>[<span style=color:#ae81ff>1</span>]) <span style=color:#f92672>?</span> <span style=color:#a6e22e>_addToCode</span>(<span style=color:#a6e22e>match</span>[<span style=color:#ae81ff>1</span>], <span style=color:#66d9ef>true</span>) <span style=color:#f92672>:</span> <span style=color:#a6e22e>_addToCode</span>(<span style=color:#e6db74>&#34;this.&#34;</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>match</span>[<span style=color:#ae81ff>1</span>], <span style=color:#66d9ef>true</span>);
 
-        <span class=nx>matchedLen</span> <span class=o>=</span> <span class=nx>match</span><span class=p>.</span><span class=nx>index</span> <span class=o>+</span> <span class=nx>match</span><span class=p>[</span><span class=mi>0</span><span class=p>].</span><span class=nx>length</span><span class=p>;</span>
-    <span class=p>}</span>
+        <span style=color:#a6e22e>matchedLen</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>match</span>.<span style=color:#a6e22e>index</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>match</span>[<span style=color:#ae81ff>0</span>].<span style=color:#a6e22e>length</span>;
+    }
 
-    <span class=nx>_addToCode</span><span class=p>(</span><span class=nx>tpl</span><span class=p>.</span><span class=nx>substr</span><span class=p>(</span><span class=nx>matchedLen</span><span class=p>,</span> <span class=nx>tpl</span><span class=p>.</span><span class=nx>length</span> <span class=o>-</span> <span class=nx>matchedLen</span><span class=p>));</span>
+    <span style=color:#a6e22e>_addToCode</span>(<span style=color:#a6e22e>tpl</span>.<span style=color:#a6e22e>substr</span>(<span style=color:#a6e22e>matchedLen</span>, <span style=color:#a6e22e>tpl</span>.<span style=color:#a6e22e>length</span> <span style=color:#f92672>-</span> <span style=color:#a6e22e>matchedLen</span>));
 
-    <span class=nx>tplToCode</span> <span class=o>+=</span> <span class=s1>&#39;return r.join(&#34;\n&#34;);&#39;</span><span class=p>;</span> 
-    <span class=c1>// console.info(code);
-</span><span class=c1></span>
-    <span class=k>return</span> <span class=k>new</span> <span class=nb>Function</span><span class=p>(</span><span class=nx>tplToCode</span><span class=p>.</span><span class=nx>replace</span><span class=p>(</span><span class=sr>/[\r\t\n]/g</span><span class=p>,</span> <span class=s1>&#39;&#39;</span><span class=p>)).</span><span class=nx>apply</span><span class=p>(</span><span class=nx>data</span><span class=p>);</span>
-<span class=p>};</span>
-</code></pre></div></article><nav class="no-print post-nav"><a class=prev-post href=https://cocacolf.github.io/blog/%E7%BB%84%E5%86%85node.js%E5%88%86%E4%BA%AB/><img class=icon-text src=/img/prev.svg>组内Node.js分享</a>
-<a class=next-post href=https://cocacolf.github.io/blog/vue-router-issues/>vue-router重复点击报错和新链接跳转失败<img class=icon-text src=/img/next.svg></a></nav><section id=related><h4>See Also</h4><ul><li><a href=/blog/node.js-event-loop/>Node.js Event Loop</a></li><li><a href=/blog/%E7%BB%84%E5%86%85node.js%E5%88%86%E4%BA%AB/>组内Node.js分享</a></li><li><a href=/blog/%E4%BB%80%E4%B9%88%E6%98%AF%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%BC%96%E7%A8%8B%E8%83%BD%E5%8A%9B/>什么才算是真正的编程能力</a></li></ul></section><script src=https://utteranc.es/client.js repo issue-term=url label theme=github-light crossorigin=anonymous async></script><div id=disqus_thread class=no-print></div><script type=text/javascript>(function(){if(window.location.hostname=="localhost")
-return;var dsq=document.createElement('script');dsq.type='text/javascript';dsq.async=true;var disqus_shortname='';dsq.src='//'+disqus_shortname+'.disqus.com/embed.js';(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(dsq);})();</script><noscript>Please enable JavaScript to view the <a href=http://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><hr class=sep></main><footer class="container no-print"><div class=u-footer><a href=mailto:CocaColf@gmail.com><img class=icon-social src=/img/email.svg alt="Email Me!"></a>
-<a href=https://github.com/CocaColf><img class=icon-social src=/img/github.svg alt=Github></a>
-<a href=https://cocacolf.github.io/index.xml target=_blank><img class=icon-social src=/img/feed.svg alt=Feed></a><p>&copy; 2020 CocaColf</p><a href=#brand><img class=icon-text src=/img/toup.svg alt="To Up">
-<span>Back to Up</span></a></div></footer></body></html>
+    <span style=color:#a6e22e>tplToCode</span> <span style=color:#f92672>+=</span> <span style=color:#e6db74>&#39;return r.join(&#34;\n&#34;);&#39;</span>; 
+    <span style=color:#75715e>// console.info(code);
+</span><span style=color:#75715e></span>
+    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>new</span> Function(<span style=color:#a6e22e>tplToCode</span>.<span style=color:#a6e22e>replace</span>(<span style=color:#e6db74>/[\r\t\n]/g</span>, <span style=color:#e6db74>&#39;&#39;</span>)).<span style=color:#a6e22e>apply</span>(<span style=color:#a6e22e>data</span>);
+};
+</code></pre></div><div id=vcomments></div><script src=//cdn1.lncld.net/static/js/3.0.4/av-min.js></script><script src=//unpkg.com/valine/dist/Valine.min.js></script><script type=text/javascript>new Valine({el:'#vcomments',appId:'5wCdX2LaFPlapBWb5D7PwjeL-gzGzoHsz',appKey:'TbOwzyyIqoN2h62jdFwidX0L',notify:'false',verify:'false',avatar:'robohash',placeholder:'说点什么吧...',visitor:'true'});</script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>

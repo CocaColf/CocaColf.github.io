@@ -1,78 +1,73 @@
-<!doctype html><html lang=en><script>var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?ca263fc43bf7a7d37bc412d545c44489";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();</script><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.78.1"><title>编写命令行工具升级eslint配置 - CocaColf</title><meta name=description content="前段时间，我们组对旧的 eslint 规则做了一次改造，推出了新的 eslint 规则。为了让从旧往新的过度更顺畅，同时让使用者的改造意愿更强，我们提供了命令行无缝升级，只需要执行 idux-cli init 即可完成配置升级或初始化。组长把这个叫做 开发者体验。
-  配置升级的本质是：将无用的旧配置去掉，有用配置保留，再将旧配置和新规则进行合并生成新配置文件。
- 首先有一个标准的 eslint 配置作为升级后的目标配置，大概如下(用xxx替换了一些缩写信息)：
-module.exports = { root: true, parserOptions: { // ts的项目 或者 ts+vue的项目启用  parser: '@typescript-eslint/parser' }, extends: [ '@xxx/base', // 基础规则，必须启用  '@xxx/vue', // 使用 vue 需要启用  '@xxx/vue2', // 使用 vue2 需要启用  '@xxx/vue3', // 使用 vue3 需要启用  '@xxx/typescript', // 使用 typescript 需要启用  '@xxx/i18n', // 老版本国际化需要启用  '@xxx/jsformat', // 格式化相关  '@xxx/vueformat', // 格式化相关  '@xxx/tsformat', // 格式化相关  ], env: { }, globals: { }, rules: { // Customize your rules  }, };  从配置里可以看出来，新配置的生成和以下几个因素有关："><link rel="shortcut icon" href=favicon.ico><link rel=stylesheet href=/css/ui.css><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Fira+Mono|Lato|Raleway"></head><body><header class="container no-print"><div class=u-header><nav class=bar><ul><li><a href=/><img class=icon-text src=/img/prev.svg></a></li><li><a href=/about>关于</a></li><li><a href=/readings>我读</a></li><li><a href=/tags>标签</a></li><li><a href=/tags/beyond-programming/>编程之外</a></li><li><a href=/tags/programming/>编程相关</a></li></ul></nav></div></header><main class=container><article><header><hgroup id=brand><h1>编写命令行工具升级eslint配置</h1><h5><time datetime="2021-06-08 00:00:00 +0000 UTC">Jun 08, 2021</time>
-<span class=no-print>-
-<a href=/tags/%e6%8a%80%e6%9c%af>技术</a>
-<a href=/tags/programming>programming</a>
-<span></h5></hgroup><hr class=sep></header><p>    前段时间，我们组对旧的 eslint 规则做了一次改造，推出了新的 eslint 规则。为了让从旧往新的过度更顺畅，同时让使用者的改造意愿更强，我们提供了命令行无缝升级，只需要执行 <code>idux-cli init</code> 即可完成配置升级或初始化。组长把这个叫做 <code>开发者体验</code>。</p><hr><p>    配置升级的本质是：将无用的旧配置去掉，有用配置保留，再将旧配置和新规则进行合并生成新配置文件。</p><p>    首先有一个标准的 eslint 配置作为升级后的目标配置，大概如下(用xxx替换了一些缩写信息)：</p><div class=highlight><pre class=chroma><code class=language-jsx data-lang=jsx><span class=nx>module</span><span class=p>.</span><span class=nx>exports</span> <span class=o>=</span> <span class=p>{</span>
-    <span class=nx>root</span><span class=o>:</span> <span class=kc>true</span><span class=p>,</span>
-    <span class=nx>parserOptions</span><span class=o>:</span> <span class=p>{</span> <span class=c1>// ts的项目 或者 ts+vue的项目启用
-</span><span class=c1></span>        <span class=nx>parser</span><span class=o>:</span> <span class=s1>&#39;@typescript-eslint/parser&#39;</span>
-    <span class=p>},</span>
-    <span class=kr>extends</span><span class=o>:</span> <span class=p>[</span>
-      <span class=s1>&#39;@xxx/base&#39;</span><span class=p>,</span> <span class=c1>// 基础规则，必须启用
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/vue&#39;</span><span class=p>,</span> <span class=c1>// 使用 vue 需要启用
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/vue2&#39;</span><span class=p>,</span> <span class=c1>// 使用 vue2 需要启用
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/vue3&#39;</span><span class=p>,</span> <span class=c1>// 使用 vue3 需要启用
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/typescript&#39;</span><span class=p>,</span> <span class=c1>// 使用 typescript 需要启用
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/i18n&#39;</span><span class=p>,</span> <span class=c1>// 老版本国际化需要启用
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/jsformat&#39;</span><span class=p>,</span> <span class=c1>// 格式化相关
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/vueformat&#39;</span><span class=p>,</span> <span class=c1>// 格式化相关
-</span><span class=c1></span>      <span class=s1>&#39;@xxx/tsformat&#39;</span><span class=p>,</span> <span class=c1>// 格式化相关
-</span><span class=c1></span>    <span class=p>],</span>
-    <span class=nx>env</span><span class=o>:</span> <span class=p>{</span>
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>编写命令行工具升级eslint配置 - CocaColf</title><meta property="og:title" content="编写命令行工具升级eslint配置 - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content=" 前段时间，我们组对旧的 eslint 规则做了一次改造，推出了新的 eslint 规则。为了让从旧往新的过度更顺畅，同时让使用者的改造意愿更强，我们提供了命令行无缝升级，只需要执行 idux-cli init 即可完成配置升级或初始化。组长把这个叫做 开发者体验。
+[&amp;hellip;]  配置升级的本质是：将无用的旧配置去掉，有用配置保留，再将旧配置和新规则进行合并生成新配置文件。
+ 首先有一个 &amp;hellip;"><meta property="og:description" content=" 前段时间，我们组对旧的 eslint 规则做了一次改造，推出了新的 eslint 规则。为了让从旧往新的过度更顺畅，同时让使用者的改造意愿更强，我们提供了命令行无缝升级，只需要执行 idux-cli init 即可完成配置升级或初始化。组长把这个叫做 开发者体验。
+[&amp;hellip;]  配置升级的本质是：将无用的旧配置去掉，有用配置保留，再将旧配置和新规则进行合并生成新配置文件。
+ 首先有一个 &amp;hellip;"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/>Home</a></li><li><a href=/about/>About</a></li><li><a href=/tags/>Tags</a></li><li><a href=/index.xml>Subscribe</a></li></ul></nav></header><article class=main><header class=title><h1>编写命令行工具升级eslint配置</h1><h3>2021-06-08</h3><hr></header><p>    前段时间，我们组对旧的 eslint 规则做了一次改造，推出了新的 eslint 规则。为了让从旧往新的过度更顺畅，同时让使用者的改造意愿更强，我们提供了命令行无缝升级，只需要执行 <code>idux-cli init</code> 即可完成配置升级或初始化。组长把这个叫做 <code>开发者体验</code>。</p><hr><p>    配置升级的本质是：将无用的旧配置去掉，有用配置保留，再将旧配置和新规则进行合并生成新配置文件。</p><p>    首先有一个标准的 eslint 配置作为升级后的目标配置，大概如下(用xxx替换了一些缩写信息)：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-jsx data-lang=jsx><span style=color:#a6e22e>module</span>.<span style=color:#a6e22e>exports</span> <span style=color:#f92672>=</span> {
+    <span style=color:#a6e22e>root</span><span style=color:#f92672>:</span> <span style=color:#66d9ef>true</span>,
+    <span style=color:#a6e22e>parserOptions</span><span style=color:#f92672>:</span> { <span style=color:#75715e>// ts的项目 或者 ts+vue的项目启用
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>parser</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;@typescript-eslint/parser&#39;</span>
+    },
+    <span style=color:#66d9ef>extends</span><span style=color:#f92672>:</span> [
+      <span style=color:#e6db74>&#39;@xxx/base&#39;</span>, <span style=color:#75715e>// 基础规则，必须启用
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/vue&#39;</span>, <span style=color:#75715e>// 使用 vue 需要启用
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/vue2&#39;</span>, <span style=color:#75715e>// 使用 vue2 需要启用
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/vue3&#39;</span>, <span style=color:#75715e>// 使用 vue3 需要启用
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/typescript&#39;</span>, <span style=color:#75715e>// 使用 typescript 需要启用
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/i18n&#39;</span>, <span style=color:#75715e>// 老版本国际化需要启用
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/jsformat&#39;</span>, <span style=color:#75715e>// 格式化相关
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/vueformat&#39;</span>, <span style=color:#75715e>// 格式化相关
+</span><span style=color:#75715e></span>      <span style=color:#e6db74>&#39;@xxx/tsformat&#39;</span>, <span style=color:#75715e>// 格式化相关
+</span><span style=color:#75715e></span>    ],
+    <span style=color:#a6e22e>env</span><span style=color:#f92672>:</span> {
       
-    <span class=p>},</span>
-    <span class=nx>globals</span><span class=o>:</span> <span class=p>{</span>
+    },
+    <span style=color:#a6e22e>globals</span><span style=color:#f92672>:</span> {
       
-    <span class=p>},</span>
-    <span class=nx>rules</span><span class=o>:</span> <span class=p>{</span>
-      <span class=c1>// Customize your rules
-</span><span class=c1></span>    <span class=p>},</span>
-  <span class=p>};</span>
-</code></pre></div><p>    从配置里可以看出来，新配置的生成和以下几个因素有关：</p><ul><li>是否通过 eslint 来控制格式化</li><li>使用的技术栈</li></ul><p>    同时 eslint 配置文件有 <code>.eslintrc.[js,json,yml,yaml]</code> 等多种后缀文件，甚至还可以定义在项目的 <code>package.json</code> 文件中，我们对所有的文件格式都提供支持。</p><p>整个过程伪代码如下：</p><div class=highlight><pre class=chroma><code class=language-jsx data-lang=jsx><span class=nx>init</span> <span class=p>()</span> <span class=p>{</span>
+    },
+    <span style=color:#a6e22e>rules</span><span style=color:#f92672>:</span> {
+      <span style=color:#75715e>// Customize your rules
+</span><span style=color:#75715e></span>    },
+  };
+</code></pre></div><p>    从配置里可以看出来，新配置的生成和以下几个因素有关：</p><ul><li>是否通过 eslint 来控制格式化</li><li>使用的技术栈</li></ul><p>    同时 eslint 配置文件有 <code>.eslintrc.[js,json,yml,yaml]</code> 等多种后缀文件，甚至还可以定义在项目的 <code>package.json</code> 文件中，我们对所有的文件格式都提供支持。</p><p>整个过程伪代码如下：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-jsx data-lang=jsx><span style=color:#a6e22e>init</span> () {
 		
-	<span class=c1>// 命令行询问格式化控制是否由 eslint 控制
-</span><span class=c1></span>	<span class=kd>let</span> <span class=nx>formatrControlByEslint</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>formatControlByEslint</span><span class=p>();</span>
+	<span style=color:#75715e>// 命令行询问格式化控制是否由 eslint 控制
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>let</span> <span style=color:#a6e22e>formatrControlByEslint</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>formatControlByEslint</span>();
 
-    <span class=c1>// step1: 生成eslintrc
-</span><span class=c1></span>    <span class=nx>genEslintRc</span><span class=p>(</span><span class=nx>formatrControlByEslint</span><span class=p>);</span>
+    <span style=color:#75715e>// step1: 生成eslintrc
+</span><span style=color:#75715e></span>    <span style=color:#a6e22e>genEslintRc</span>(<span style=color:#a6e22e>formatrControlByEslint</span>);
 
-    <span class=c1>// step2: 格式化如果由prettier控制，则生成 prettierrc
-</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=nx>formatrControlByEslint</span><span class=p>)</span> <span class=p>{</span>
-        <span class=nx>prettierrc</span><span class=p>();</span>
-    <span class=p>}</span>
+    <span style=color:#75715e>// step2: 格式化如果由prettier控制，则生成 prettierrc
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>formatrControlByEslint</span>) {
+        <span style=color:#a6e22e>prettierrc</span>();
+    }
 
-    <span class=c1>// step4: 删除package.json中旧的eslint依赖
-</span><span class=c1></span>    <span class=nx>deleteOldPkgsInPackageJson</span><span class=p>();</span>
-<span class=p>}</span>
-</code></pre></div><p><code>genEslintRc</code> 要做以下几件事：</p><ul><li>判断技术栈</li><li>根据技术栈创建新的 eslint 文件的内容</li><li>根据现在项目的后缀来分析现在的配置，且和新的配置合并生成新的 eslint 配置</li><li>写入/创建对应的 eslint 配置文件</li></ul><p><strong>如何判断技术栈？</strong></p><ul><li>通过 <code>package.json</code> 中的依赖来判断</li></ul><p><strong>如何分析旧 eslint 配置？</strong></p><ul><li><code>.eslintrc.js</code> 文件</li></ul><p>    最开始，我是通过 require <code>.eslintrc.js</code> 文件来对旧配置进行处理，但是后面发现这种方式是不对的。因为在配置中，可能存在三元表达式，如果 require 此文件，则得到的是表达式执行后的结果，而我的目标是保留原始代码。因此只能通过 <strong>操作抽象语法树来处理</strong>。</p><p>    起手就是三板斧： <code>esprima</code> 来解析 AST，<code>estraverse</code> 来操作 AST，<code>escodegen</code> 来生成代码。伪代码如下：</p><div class=highlight><pre class=chroma><code class=language-jsx data-lang=jsx><span class=kr>import</span> <span class=o>*</span> <span class=nx>as</span> <span class=nx>estraverse</span> <span class=nx>from</span> <span class=s1>&#39;estraverse&#39;</span><span class=p>;</span>
-<span class=kr>import</span> <span class=o>*</span> <span class=nx>as</span> <span class=nx>esprima</span> <span class=nx>from</span> <span class=s1>&#39;esprima&#39;</span><span class=p>;</span>
-<span class=kr>import</span> <span class=o>*</span> <span class=nx>as</span> <span class=nx>escodegen</span> <span class=nx>from</span> <span class=s1>&#39;escodegen&#39;</span><span class=p>;</span>
+    <span style=color:#75715e>// step4: 删除package.json中旧的eslint依赖
+</span><span style=color:#75715e></span>    <span style=color:#a6e22e>deleteOldPkgsInPackageJson</span>();
+}
+</code></pre></div><p><code>genEslintRc</code> 要做以下几件事：</p><ul><li>判断技术栈</li><li>根据技术栈创建新的 eslint 文件的内容</li><li>根据现在项目的后缀来分析现在的配置，且和新的配置合并生成新的 eslint 配置</li><li>写入/创建对应的 eslint 配置文件</li></ul><p><strong>如何判断技术栈？</strong></p><ul><li>通过 <code>package.json</code> 中的依赖来判断</li></ul><p><strong>如何分析旧 eslint 配置？</strong></p><ul><li><code>.eslintrc.js</code> 文件</li></ul><p>    最开始，我是通过 require <code>.eslintrc.js</code> 文件来对旧配置进行处理，但是后面发现这种方式是不对的。因为在配置中，可能存在三元表达式，如果 require 此文件，则得到的是表达式执行后的结果，而我的目标是保留原始代码。因此只能通过 <strong>操作抽象语法树来处理</strong>。</p><p>    起手就是三板斧： <code>esprima</code> 来解析 AST，<code>estraverse</code> 来操作 AST，<code>escodegen</code> 来生成代码。伪代码如下：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-jsx data-lang=jsx><span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>estraverse</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;estraverse&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>esprima</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;esprima&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>escodegen</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;escodegen&#39;</span>;
 
-<span class=c1>// 解析ast, fileContent为读取出来的 .eslintrc.js 文件内容
-</span><span class=c1></span><span class=kd>let</span> <span class=nx>parseAst</span> <span class=o>=</span> <span class=nx>esprima</span><span class=p>.</span><span class=nx>parseScript</span><span class=p>(</span><span class=nx>fileContent</span><span class=p>);</span>
+<span style=color:#75715e>// 解析ast, fileContent为读取出来的 .eslintrc.js 文件内容
+</span><span style=color:#75715e></span><span style=color:#66d9ef>let</span> <span style=color:#a6e22e>parseAst</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>esprima</span>.<span style=color:#a6e22e>parseScript</span>(<span style=color:#a6e22e>fileContent</span>);
 
-<span class=cm>/**
-</span><span class=cm> * 操作抽象语法树
-</span><span class=cm> * @Params {Object} ast 解析出来的ast
-</span><span class=cm> * @Params {Object} 根据技术栈构造的eslint一些配置项
-</span><span class=cm> */</span>
-<span class=kr>const</span> <span class=nx>eslintAst</span> <span class=o>=</span> <span class=p>(</span><span class=nx>ast</span><span class=p>,</span> <span class=nx>newEslintConfig</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=p>{</span>
-	<span class=nx>estraverse</span><span class=p>.</span><span class=nx>replace</span><span class=p>(</span><span class=nx>ast</span><span class=p>,</span> <span class=p>{</span>
-		<span class=nx>enter</span> <span class=p>(</span><span class=nx>astNode</span><span class=p>)</span> <span class=p>{</span>
-			<span class=c1>// 对节点做增删改查处理，构造出想要的eslint配置
-</span><span class=c1></span>		<span class=p>}</span>
-	<span class=p>});</span>
-<span class=p>}</span>
+<span style=color:#75715e>/**
+</span><span style=color:#75715e> * 操作抽象语法树
+</span><span style=color:#75715e> * @Params {Object} ast 解析出来的ast
+</span><span style=color:#75715e> * @Params {Object} 根据技术栈构造的eslint一些配置项
+</span><span style=color:#75715e> */</span>
+<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>eslintAst</span> <span style=color:#f92672>=</span> (<span style=color:#a6e22e>ast</span>, <span style=color:#a6e22e>newEslintConfig</span>) =&gt; {
+	<span style=color:#a6e22e>estraverse</span>.<span style=color:#a6e22e>replace</span>(<span style=color:#a6e22e>ast</span>, {
+		<span style=color:#a6e22e>enter</span> (<span style=color:#a6e22e>astNode</span>) {
+			<span style=color:#75715e>// 对节点做增删改查处理，构造出想要的eslint配置
+</span><span style=color:#75715e></span>		}
+	});
+}
 
-<span class=c1>// 生成代码，得到配置
-</span><span class=c1></span><span class=kd>let</span> <span class=nx>newAst</span> <span class=o>=</span> <span class=nx>eslintAst</span><span class=p>(</span><span class=nx>parseAst</span><span class=p>,</span> <span class=nx>newEslintConfig</span><span class=p>);</span>
-<span class=nx>escodegen</span><span class=p>.</span><span class=nx>generate</span><span class=p>(</span><span class=nx>newAst</span><span class=p>);</span>
-</code></pre></div><ul><li>json、yml、yaml文件</li></ul><p>    这里将这三者放在一起讲，很显然他们的处理是相似的。将 yml 或 yaml 处理为 json 数据来进行操作，最后再把处理好的 JSON 转为相应后缀的文件格式即可。这个工作可以使用 <code>js-yaml</code> 来完成。</p><p>    后续生成新的配置则是对 JSON 进行操作，问题就变得很简单了。</p><p><strong>其他</strong></p><ul><li>注意新生成的配置，其缩进要和旧的配置缩进一致。可以使用 <code>detect-indent</code> 这个包来获得缩进位数。</li><li>容易忽略没有配置 eslint 的新项目的场景</li></ul></article><nav class="no-print post-nav"><a class=prev-post href=https://cocacolf.github.io/blog/%E5%88%86%E6%9E%90%E6%96%87%E4%BB%B6%E5%A4%B9%E7%94%9F%E6%88%90%E6%96%87%E6%A1%A3%E9%A1%B5%E9%9D%A2/><img class=icon-text src=/img/prev.svg>分析文件夹生成文档页面</a>
-<a class=next-post href=https://cocacolf.github.io/blog/%E6%88%91%E4%BB%AC%E7%94%9F%E5%91%BD%E7%9A%84%E5%8E%86%E5%8F%B2%E4%BD%95%E5%AD%98/>我们生命的历史何存<img class=icon-text src=/img/next.svg></a></nav><section id=related><h4>See Also</h4><ul><li><a href=/blog/%E5%88%86%E6%9E%90%E6%96%87%E4%BB%B6%E5%A4%B9%E7%94%9F%E6%88%90%E6%96%87%E6%A1%A3%E9%A1%B5%E9%9D%A2/>分析文件夹生成文档页面</a></li><li><a href=/blog/vue-router-issues/>vue-router重复点击报错和新链接跳转失败</a></li><li><a href=/blog/%E7%AE%80%E5%8D%95%E7%89%88html%E6%A8%A1%E6%9D%BF%E5%BC%95%E6%93%8E/>简单版html模板引擎</a></li></ul></section><script src=https://utteranc.es/client.js repo issue-term=url label theme=github-light crossorigin=anonymous async></script><div id=disqus_thread class=no-print></div><script type=text/javascript>(function(){if(window.location.hostname=="localhost")
-return;var dsq=document.createElement('script');dsq.type='text/javascript';dsq.async=true;var disqus_shortname='';dsq.src='//'+disqus_shortname+'.disqus.com/embed.js';(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(dsq);})();</script><noscript>Please enable JavaScript to view the <a href=http://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><hr class=sep></main><footer class="container no-print"><div class=u-footer><a href=mailto:CocaColf@gmail.com><img class=icon-social src=/img/email.svg alt="Email Me!"></a>
-<a href=https://github.com/CocaColf><img class=icon-social src=/img/github.svg alt=Github></a>
-<a href=https://cocacolf.github.io/index.xml target=_blank><img class=icon-social src=/img/feed.svg alt=Feed></a><p>&copy; 2020 CocaColf</p><a href=#brand><img class=icon-text src=/img/toup.svg alt="To Up">
-<span>Back to Up</span></a></div></footer></body></html>
+<span style=color:#75715e>// 生成代码，得到配置
+</span><span style=color:#75715e></span><span style=color:#66d9ef>let</span> <span style=color:#a6e22e>newAst</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>eslintAst</span>(<span style=color:#a6e22e>parseAst</span>, <span style=color:#a6e22e>newEslintConfig</span>);
+<span style=color:#a6e22e>escodegen</span>.<span style=color:#a6e22e>generate</span>(<span style=color:#a6e22e>newAst</span>);
+</code></pre></div><ul><li>json、yml、yaml文件</li></ul><p>    这里将这三者放在一起讲，很显然他们的处理是相似的。将 yml 或 yaml 处理为 json 数据来进行操作，最后再把处理好的 JSON 转为相应后缀的文件格式即可。这个工作可以使用 <code>js-yaml</code> 来完成。</p><p>    后续生成新的配置则是对 JSON 进行操作，问题就变得很简单了。</p><p><strong>其他</strong></p><ul><li>注意新生成的配置，其缩进要和旧的配置缩进一致。可以使用 <code>detect-indent</code> 这个包来获得缩进位数。</li><li>容易忽略没有配置 eslint 的新项目的场景</li></ul><div id=vcomments></div><script src=//cdn1.lncld.net/static/js/3.0.4/av-min.js></script><script src=//unpkg.com/valine/dist/Valine.min.js></script><script type=text/javascript>new Valine({el:'#vcomments',appId:'5wCdX2LaFPlapBWb5D7PwjeL-gzGzoHsz',appKey:'TbOwzyyIqoN2h62jdFwidX0L',notify:'false',verify:'false',avatar:'robohash',placeholder:'说点什么吧...',visitor:'true'});</script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>

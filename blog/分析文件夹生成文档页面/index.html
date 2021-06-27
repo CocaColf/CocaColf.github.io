@@ -1,112 +1,103 @@
-<!doctype html><html lang=en><script>var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?ca263fc43bf7a7d37bc412d545c44489";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();</script><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.78.1"><title>分析文件夹生成文档页面 - CocaColf</title><meta name=description content="背景  最近小组在做 eslint 相关的升级改造，同时我们需要搭建一个平台，其内容为文档和一些好坏写法的代码展示等。
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>分析文件夹生成文档页面 - CocaColf</title><meta property="og:title" content="分析文件夹生成文档页面 - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content=" 最近小组在做 eslint 相关的升级改造，同时我们需要搭建一个平台，其内容为文档和一些好坏写法的代码展示等。
  为了让日后平台的维护者更好的维护文档，或者说只需要编写或删除文档，而不用修改代码，因此需要将文档自动化处理，和代码分离。
- 新增或删除文档只需要在对应的文件夹下新增或删除文档文件即可 平台代码 build 的时候会自动处理 /docs 文件夹下的文档，生成配置文件，我们只需要在某个文档组件里引用该配置文件即可生成文档页面   由于在内网开发的我也不好截图，但是其效果和 Vue 官网这个效果基本一致：点击顶部某个导航栏，页面左侧为目录层级，右侧为文档信息。
-build时处理文档  首先有两个约定：
- 所有的文档都放在 /docs 下，按照目录放好。比如 /docs/Vue/基础/安装.md 生成的目录结构为：一级为分类，二级为标题，三级为文档下的标题   这个平台技术栈为 Vite 和 Vue。
-markdown to vue
- 我们需要把 md 文档当成 Vue 组件渲染在页面上，因此配置一下 vite.config.js：
-import { defineConfig } from 'vite'; import vue from '@vitejs/plugin-vue'; import Markdown from 'vite-plugin-md'; export default defineConfig({ plugins: [ vue({ include: [/\.vue$/, /\.md$/], }), Markdown({ markdownItSetup(md) { md."><link rel="shortcut icon" href=favicon.ico><link rel=stylesheet href=/css/ui.css><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Fira+Mono|Lato|Raleway"></head><body><header class="container no-print"><div class=u-header><nav class=bar><ul><li><a href=/><img class=icon-text src=/img/prev.svg></a></li><li><a href=/about>关于</a></li><li><a href=/readings>我读</a></li><li><a href=/tags>标签</a></li><li><a href=/tags/beyond-programming/>编程之外</a></li><li><a href=/tags/programming/>编程相关</a></li></ul></nav></div></header><main class=container><article><header><hgroup id=brand><h1>分析文件夹生成文档页面</h1><h5><time datetime="2021-04-13 00:00:00 +0000 UTC">Apr 13, 2021</time>
-<span class=no-print>-
-<a href=/tags/%e6%8a%80%e6%9c%af>技术</a>
-<a href=/tags/programming>programming</a>
-<span></h5></hgroup><hr class=sep></header><h2 id=背景>背景</h2><p>    最近小组在做 <code>eslint</code> 相关的升级改造，同时我们需要搭建一个平台，其内容为文档和一些好坏写法的代码展示等。</p><p>    为了让日后平台的维护者更好的维护文档，或者说只需要编写或删除文档，而不用修改代码，因此需要将文档自动化处理，和代码分离。</p><ul><li>新增或删除文档只需要在对应的文件夹下新增或删除文档文件即可</li><li>平台代码 <code>build</code> 的时候会自动处理 <code>/docs</code> 文件夹下的文档，生成配置文件，我们只需要在某个文档组件里引用该配置文件即可生成文档页面</li></ul><p>    由于在内网开发的我也不好截图，但是其效果和 Vue 官网这个效果基本一致：点击顶部某个导航栏，页面左侧为目录层级，右侧为文档信息。</p><p><img src=https://i.loli.net/2021/04/13/uQtyT9rZi8zcgEX.png alt=效果></p><h2 id=build时处理文档>build时处理文档</h2><p>    首先有两个约定：</p><ul><li>所有的文档都放在 <code>/docs</code> 下，按照目录放好。比如 <code>/docs/Vue/基础/安装.md</code></li><li>生成的目录结构为：一级为分类，二级为标题，三级为文档下的标题</li></ul><p>    这个平台技术栈为 <code>Vite</code> 和 <code>Vue</code>。</p><p><strong>markdown to vue</strong></p><p>    我们需要把 md 文档当成 Vue 组件渲染在页面上，因此配置一下 <code>vite.config.js</code>：</p><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=kr>import</span> <span class=p>{</span> <span class=nx>defineConfig</span> <span class=p>}</span> <span class=nx>from</span> <span class=s1>&#39;vite&#39;</span><span class=p>;</span>
-<span class=kr>import</span> <span class=nx>vue</span> <span class=nx>from</span> <span class=s1>&#39;@vitejs/plugin-vue&#39;</span><span class=p>;</span>
-<span class=kr>import</span> <span class=nx>Markdown</span> <span class=nx>from</span> <span class=s1>&#39;vite-plugin-md&#39;</span><span class=p>;</span>
+[&amp;hellip;]  由于在内网开发的我也不好截图，但是其效果和 Vue 官网这个效果基本一致：点击顶部某个导航栏，页面左侧为目录层级，右侧为文档信息。 &amp;hellip;"><meta property="og:description" content=" 最近小组在做 eslint 相关的升级改造，同时我们需要搭建一个平台，其内容为文档和一些好坏写法的代码展示等。
+ 为了让日后平台的维护者更好的维护文档，或者说只需要编写或删除文档，而不用修改代码，因此需要将文档自动化处理，和代码分离。
+[&amp;hellip;]  由于在内网开发的我也不好截图，但是其效果和 Vue 官网这个效果基本一致：点击顶部某个导航栏，页面左侧为目录层级，右侧为文档信息。 &amp;hellip;"><meta name=twitter:image content="https://i.loli.net/2021/04/13/uQtyT9rZi8zcgEX.png"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/>Home</a></li><li><a href=/about/>About</a></li><li><a href=/tags/>Tags</a></li><li><a href=/index.xml>Subscribe</a></li></ul></nav></header><article class=main><header class=title><h1>分析文件夹生成文档页面</h1><h3>2021-04-13</h3><hr></header><h2 id=背景>背景</h2><p>    最近小组在做 <code>eslint</code> 相关的升级改造，同时我们需要搭建一个平台，其内容为文档和一些好坏写法的代码展示等。</p><p>    为了让日后平台的维护者更好的维护文档，或者说只需要编写或删除文档，而不用修改代码，因此需要将文档自动化处理，和代码分离。</p><ul><li>新增或删除文档只需要在对应的文件夹下新增或删除文档文件即可</li><li>平台代码 <code>build</code> 的时候会自动处理 <code>/docs</code> 文件夹下的文档，生成配置文件，我们只需要在某个文档组件里引用该配置文件即可生成文档页面</li></ul><p>    由于在内网开发的我也不好截图，但是其效果和 Vue 官网这个效果基本一致：点击顶部某个导航栏，页面左侧为目录层级，右侧为文档信息。</p><p><img src=https://i.loli.net/2021/04/13/uQtyT9rZi8zcgEX.png alt=效果></p><h2 id=build时处理文档>build时处理文档</h2><p>    首先有两个约定：</p><ul><li>所有的文档都放在 <code>/docs</code> 下，按照目录放好。比如 <code>/docs/Vue/基础/安装.md</code></li><li>生成的目录结构为：一级为分类，二级为标题，三级为文档下的标题</li></ul><p>    这个平台技术栈为 <code>Vite</code> 和 <code>Vue</code>。</p><p><strong>markdown to vue</strong></p><p>    我们需要把 md 文档当成 Vue 组件渲染在页面上，因此配置一下 <code>vite.config.js</code>：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>defineConfig</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;vite&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#a6e22e>vue</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@vitejs/plugin-vue&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#a6e22e>Markdown</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;vite-plugin-md&#39;</span>;
 
-<span class=kr>export</span> <span class=k>default</span> <span class=nx>defineConfig</span><span class=p>({</span>
-    <span class=nx>plugins</span><span class=o>:</span> <span class=p>[</span>
-        <span class=nx>vue</span><span class=p>({</span>
-            <span class=nx>include</span><span class=o>:</span> <span class=p>[</span><span class=sr>/\.vue$/</span><span class=p>,</span> <span class=sr>/\.md$/</span><span class=p>],</span>
-        <span class=p>}),</span>
-        <span class=nx>Markdown</span><span class=p>({</span>
-            <span class=nx>markdownItSetup</span><span class=p>(</span><span class=nx>md</span><span class=p>)</span> <span class=p>{</span>
-                <span class=nx>md</span><span class=p>.</span><span class=nx>use</span><span class=p>(</span><span class=nx>require</span><span class=p>(</span><span class=s1>&#39;markdown-it-anchor&#39;</span><span class=p>));</span>
-                <span class=nx>md</span><span class=p>.</span><span class=nx>use</span><span class=p>(</span><span class=nx>require</span><span class=p>(</span><span class=s1>&#39;markdown-it-prism&#39;</span><span class=p>));</span>
-            <span class=p>},</span>
-        <span class=p>}),</span>
-    <span class=p>],</span>
-<span class=p>});</span>
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>default</span> <span style=color:#a6e22e>defineConfig</span>({
+    <span style=color:#a6e22e>plugins</span><span style=color:#f92672>:</span> [
+        <span style=color:#a6e22e>vue</span>({
+            <span style=color:#a6e22e>include</span><span style=color:#f92672>:</span> [<span style=color:#e6db74>/\.vue$/</span>, <span style=color:#e6db74>/\.md$/</span>],
+        }),
+        <span style=color:#a6e22e>Markdown</span>({
+            <span style=color:#a6e22e>markdownItSetup</span>(<span style=color:#a6e22e>md</span>) {
+                <span style=color:#a6e22e>md</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>require</span>(<span style=color:#e6db74>&#39;markdown-it-anchor&#39;</span>));
+                <span style=color:#a6e22e>md</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>require</span>(<span style=color:#e6db74>&#39;markdown-it-prism&#39;</span>));
+            },
+        }),
+    ],
+});
 
-</code></pre></div><p><strong>编写脚本，build时处理文档</strong></p><p>    我的思路如下：</p><ul><li>build 时，分析文档生成目录层级信息和路由信息</li><li>目录层级信息提供给左侧目录组件渲染左侧目录</li><li>文档路由和平台现有路由合并</li></ul><p>    生成目录信息没有什么的难度：</p><ul><li>读取 <code>/docs</code> 目录生成目录层级，数据结构为树</li><li>markdown 中的标题，可以通过将 markdown 转成 html，通过正则匹配 html 中的 h标签得到</li><li>最终结果会生成两个配置文件：<code>文档名.json</code> 和 <code>docsRouter.json</code></li></ul><p>    其中 <code>文档名.json</code> 内容示例如下，它表示的是左侧的目录层级关系，用于提供给左侧目录组件渲染目录：</p><div class=highlight><pre class=chroma><code class=language-json data-lang=json><span class=err>//</span> <span class=err>title为显示在左侧的目录标题</span>
-<span class=err>//</span> <span class=err>child</span> <span class=err>为markdown中的标题</span>
-<span class=err>//</span> <span class=err>path为该文档的路由</span>
-<span class=p>[{</span>
-    <span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;基础&#34;</span><span class=p>,</span>
-    <span class=nt>&#34;path&#34;</span><span class=p>:</span> <span class=s2>&#34;&#34;</span><span class=p>,</span>
-    <span class=nt>&#34;child&#34;</span><span class=p>:</span> <span class=p>[</span>
-        <span class=p>{</span>
-            <span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;介绍&#34;</span><span class=p>,</span>
-            <span class=nt>&#34;path&#34;</span><span class=p>:</span> <span class=s2>&#34;/docs/test/jichu/jieshao.md&#34;</span><span class=p>,</span>
-            <span class=nt>&#34;child&#34;</span><span class=p>:</span> <span class=p>[</span>
-                <span class=s2>&#34;介绍&#34;</span><span class=p>,</span>
-                <span class=s2>&#34;标题2&#34;</span><span class=p>,</span>
-                <span class=s2>&#34;标题3&#34;</span>
-            <span class=p>]</span>
-        <span class=p>},</span>
-        <span class=p>{</span>
-            <span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;安装&#34;</span><span class=p>,</span>
-            <span class=nt>&#34;path&#34;</span><span class=p>:</span> <span class=s2>&#34;/docs/test/jichu/anzhuang.md&#34;</span><span class=p>,</span>
-            <span class=nt>&#34;child&#34;</span><span class=p>:</span> <span class=p>[</span>
-                <span class=s2>&#34;安装&#34;</span><span class=p>,</span>
-                <span class=s2>&#34;标题2&#34;</span><span class=p>,</span>
-                <span class=s2>&#34;标题3&#34;</span>
-            <span class=p>]</span>
-        <span class=p>}</span>
-    <span class=p>]</span>
-<span class=p>},</span>
-<span class=p>{</span>
-    <span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;深入&#34;</span><span class=p>,</span>
-    <span class=nt>&#34;path&#34;</span><span class=p>:</span> <span class=s2>&#34;&#34;</span><span class=p>,</span>
-    <span class=nt>&#34;child&#34;</span><span class=p>:</span> <span class=p>[</span>
-        <span class=p>{</span>
-            <span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;原理&#34;</span><span class=p>,</span>
-            <span class=nt>&#34;path&#34;</span><span class=p>:</span> <span class=s2>&#34;/docs/test/shenru/yuanli.md&#34;</span><span class=p>,</span>
-            <span class=nt>&#34;child&#34;</span><span class=p>:</span> <span class=p>[</span>
-                <span class=s2>&#34;原理&#34;</span><span class=p>,</span>
-                <span class=s2>&#34;标题2&#34;</span><span class=p>,</span>
-                <span class=s2>&#34;标题3&#34;</span>
-            <span class=p>]</span>
-        <span class=p>}</span>
-    <span class=p>]</span>
-<span class=p>}]</span>
-</code></pre></div><p>    <code>docsRouter.json</code>示例如下：</p><div class=highlight><pre class=chroma><code class=language-json data-lang=json><span class=err>//</span> <span class=err>pathForRouter为路由</span>
-<span class=err>//</span> <span class=err>path为某markdown文档的路径</span>
-<span class=p>[{</span>
-    <span class=nt>&#34;pathForRouter&#34;</span><span class=p>:</span> <span class=s2>&#34;/docs/test/shenru/yuanli.md&#34;</span><span class=p>,</span>
-    <span class=nt>&#34;path&#34;</span><span class=p>:</span> <span class=s2>&#34;/docs/test/深入/原理.md&#34;</span><span class=p>,</span>
-    <span class=nt>&#34;content&#34;</span><span class=p>:</span> <span class=s2>&#34;这里是文档的内容&#34;</span>
-<span class=p>}]</span>
-</code></pre></div><p>    然后在路由配置文件里，写一个小函数将原有的路由配置和现在生成的路由进行合并。文档路由的 <code>component</code> 配置为 <code>import(/docs/test/深入/原理.md)</code> 即可，其余的就交给 Vite 了。</p><p>    这里有两个细节：</p><ul><li>生成的路由都是中文文件名的拼音</li><li>文件中将文档的内容也放了进去，即 content 字段</li></ul><p>    如果生成的路由是中文的话，比如 <code>/docs/test/深入/原理.md</code>，那么当你刷新当前路由时，会发现当前页面白屏了。这是因为浏览器会对中文进行编码处理 <code>/docs/test/%E6%B7%B1%E5%85%A5/%E5%8E%9F%E7%90%86.md</code>，因此刷新时，Vite 找不到编码后的这个路由导致找不到组件。</p><p>    生成路由信息文件时，顺便将文件内容也放入 json 中，是为了做前端搜索功能。你可以在 Vue 官网上 <code>ctrl+k</code> 体验一下搜索功能，实现效果基本是照它来的。不过Vue 官网的搜索是后端搜索的，我这里做的搜索功能是前端搜索。想必你猜到了，就是将搜索框内的搜索字符串在 <code>docsRouter.json</code> 中进行字符串搜索，因此我可以非常方便的一并将搜索结果对应的文档路由也获取到！因此做结果跳转就非常方便了。</p><h2 id=业务代码中使用文档>业务代码中使用文档</h2><p>    build 时，已经将所有信息都生成且处理好了，因此在某个页面中使用就很简单了方便了。比如现在 <code>QA.vue</code> 是一个文档展示页面：</p><div class=highlight><pre class=chroma><code class=language-vue data-lang=vue><span class=c1>// QA.vue
-</span><span class=c1></span>
-<span class=p>&lt;</span><span class=nt>template</span><span class=p>&gt;</span>
-    <span class=p>&lt;</span><span class=nt>side-toc</span> <span class=nt>:tocData</span><span class=s>=&#34;tocValue&#34;</span> <span class=p>/&gt;</span>
-    <span class=p>&lt;</span><span class=nt>router-view</span> <span class=p>/&gt;</span>
-<span class=p>&lt;/</span><span class=nt>template</span><span class=p>&gt;</span>
+</code></pre></div><p><strong>编写脚本，build时处理文档</strong></p><p>    我的思路如下：</p><ul><li>build 时，分析文档生成目录层级信息和路由信息</li><li>目录层级信息提供给左侧目录组件渲染左侧目录</li><li>文档路由和平台现有路由合并</li></ul><p>    生成目录信息没有什么的难度：</p><ul><li>读取 <code>/docs</code> 目录生成目录层级，数据结构为树</li><li>markdown 中的标题，可以通过将 markdown 转成 html，通过正则匹配 html 中的 h标签得到</li><li>最终结果会生成两个配置文件：<code>文档名.json</code> 和 <code>docsRouter.json</code></li></ul><p>    其中 <code>文档名.json</code> 内容示例如下，它表示的是左侧的目录层级关系，用于提供给左侧目录组件渲染目录：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#960050;background-color:#1e0010>//</span> <span style=color:#960050;background-color:#1e0010>title为显示在左侧的目录标题</span>
+<span style=color:#960050;background-color:#1e0010>//</span> <span style=color:#960050;background-color:#1e0010>child</span> <span style=color:#960050;background-color:#1e0010>为markdown中的标题</span>
+<span style=color:#960050;background-color:#1e0010>//</span> <span style=color:#960050;background-color:#1e0010>path为该文档的路由</span>
+[{
+    <span style=color:#f92672>&#34;title&#34;</span>: <span style=color:#e6db74>&#34;基础&#34;</span>,
+    <span style=color:#f92672>&#34;path&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+    <span style=color:#f92672>&#34;child&#34;</span>: [
+        {
+            <span style=color:#f92672>&#34;title&#34;</span>: <span style=color:#e6db74>&#34;介绍&#34;</span>,
+            <span style=color:#f92672>&#34;path&#34;</span>: <span style=color:#e6db74>&#34;/docs/test/jichu/jieshao.md&#34;</span>,
+            <span style=color:#f92672>&#34;child&#34;</span>: [
+                <span style=color:#e6db74>&#34;介绍&#34;</span>,
+                <span style=color:#e6db74>&#34;标题2&#34;</span>,
+                <span style=color:#e6db74>&#34;标题3&#34;</span>
+            ]
+        },
+        {
+            <span style=color:#f92672>&#34;title&#34;</span>: <span style=color:#e6db74>&#34;安装&#34;</span>,
+            <span style=color:#f92672>&#34;path&#34;</span>: <span style=color:#e6db74>&#34;/docs/test/jichu/anzhuang.md&#34;</span>,
+            <span style=color:#f92672>&#34;child&#34;</span>: [
+                <span style=color:#e6db74>&#34;安装&#34;</span>,
+                <span style=color:#e6db74>&#34;标题2&#34;</span>,
+                <span style=color:#e6db74>&#34;标题3&#34;</span>
+            ]
+        }
+    ]
+},
+{
+    <span style=color:#f92672>&#34;title&#34;</span>: <span style=color:#e6db74>&#34;深入&#34;</span>,
+    <span style=color:#f92672>&#34;path&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+    <span style=color:#f92672>&#34;child&#34;</span>: [
+        {
+            <span style=color:#f92672>&#34;title&#34;</span>: <span style=color:#e6db74>&#34;原理&#34;</span>,
+            <span style=color:#f92672>&#34;path&#34;</span>: <span style=color:#e6db74>&#34;/docs/test/shenru/yuanli.md&#34;</span>,
+            <span style=color:#f92672>&#34;child&#34;</span>: [
+                <span style=color:#e6db74>&#34;原理&#34;</span>,
+                <span style=color:#e6db74>&#34;标题2&#34;</span>,
+                <span style=color:#e6db74>&#34;标题3&#34;</span>
+            ]
+        }
+    ]
+}]
+</code></pre></div><p>    <code>docsRouter.json</code>示例如下：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#960050;background-color:#1e0010>//</span> <span style=color:#960050;background-color:#1e0010>pathForRouter为路由</span>
+<span style=color:#960050;background-color:#1e0010>//</span> <span style=color:#960050;background-color:#1e0010>path为某markdown文档的路径</span>
+[{
+    <span style=color:#f92672>&#34;pathForRouter&#34;</span>: <span style=color:#e6db74>&#34;/docs/test/shenru/yuanli.md&#34;</span>,
+    <span style=color:#f92672>&#34;path&#34;</span>: <span style=color:#e6db74>&#34;/docs/test/深入/原理.md&#34;</span>,
+    <span style=color:#f92672>&#34;content&#34;</span>: <span style=color:#e6db74>&#34;这里是文档的内容&#34;</span>
+}]
+</code></pre></div><p>    然后在路由配置文件里，写一个小函数将原有的路由配置和现在生成的路由进行合并。文档路由的 <code>component</code> 配置为 <code>import(/docs/test/深入/原理.md)</code> 即可，其余的就交给 Vite 了。</p><p>    这里有两个细节：</p><ul><li>生成的路由都是中文文件名的拼音</li><li>文件中将文档的内容也放了进去，即 content 字段</li></ul><p>    如果生成的路由是中文的话，比如 <code>/docs/test/深入/原理.md</code>，那么当你刷新当前路由时，会发现当前页面白屏了。这是因为浏览器会对中文进行编码处理 <code>/docs/test/%E6%B7%B1%E5%85%A5/%E5%8E%9F%E7%90%86.md</code>，因此刷新时，Vite 找不到编码后的这个路由导致找不到组件。</p><p>    生成路由信息文件时，顺便将文件内容也放入 json 中，是为了做前端搜索功能。你可以在 Vue 官网上 <code>ctrl+k</code> 体验一下搜索功能，实现效果基本是照它来的。不过Vue 官网的搜索是后端搜索的，我这里做的搜索功能是前端搜索。想必你猜到了，就是将搜索框内的搜索字符串在 <code>docsRouter.json</code> 中进行字符串搜索，因此我可以非常方便的一并将搜索结果对应的文档路由也获取到！因此做结果跳转就非常方便了。</p><h2 id=业务代码中使用文档>业务代码中使用文档</h2><p>    build 时，已经将所有信息都生成且处理好了，因此在某个页面中使用就很简单了方便了。比如现在 <code>QA.vue</code> 是一个文档展示页面：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-vue data-lang=vue><span style=color:#75715e>// QA.vue
+</span><span style=color:#75715e></span>
+&lt;<span style=color:#f92672>template</span>&gt;
+    &lt;<span style=color:#f92672>side-toc</span> <span style=color:#f92672>:tocData</span><span style=color:#e6db74>=&#34;tocValue&#34;</span> /&gt;
+    &lt;<span style=color:#f92672>router-view</span> /&gt;
+&lt;/<span style=color:#f92672>template</span>&gt;
 
-<span class=p>&lt;</span><span class=nt>script</span> <span class=na>lang</span><span class=o>=</span><span class=s>&#34;ts&#34;</span><span class=p>&gt;</span>
-<span class=kr>import</span> <span class=p>{</span> <span class=nx>defineComponent</span> <span class=p>}</span> <span class=nx>from</span> <span class=s2>&#34;vue&#34;</span><span class=p>;</span>
+&lt;<span style=color:#f92672>script</span> <span style=color:#a6e22e>lang</span><span style=color:#f92672>=</span><span style=color:#e6db74>&#34;ts&#34;</span>&gt;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>defineComponent</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;vue&#34;</span>;
 
-<span class=c1>// 这里在导入生成的文档目录数据
-</span><span class=c1></span><span class=kr>import</span> <span class=nx>testDoc</span> <span class=nx>from</span> <span class=s1>&#39;@/toc/test.json&#39;</span><span class=p>;</span>
+<span style=color:#75715e>// 这里在导入生成的文档目录数据
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> <span style=color:#a6e22e>testDoc</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@/toc/test.json&#39;</span>;
 
-<span class=c1>// 这是左侧目录组件
-</span><span class=c1></span><span class=kr>import</span> <span class=nx>SideToc</span> <span class=nx>from</span> <span class=s1>&#39;@/components/SideToc.vue&#39;</span><span class=p>;</span>
+<span style=color:#75715e>// 这是左侧目录组件
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> <span style=color:#a6e22e>SideToc</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@/components/SideToc.vue&#39;</span>;
 
-<span class=kr>export</span> <span class=k>default</span> <span class=nx>defineComponent</span><span class=p>({</span>
-    <span class=nx>components</span><span class=o>:</span> <span class=p>{</span>
-      <span class=nx>SideToc</span>
-    <span class=p>},</span>
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>default</span> <span style=color:#a6e22e>defineComponent</span>({
+    <span style=color:#a6e22e>components</span><span style=color:#f92672>:</span> {
+      <span style=color:#a6e22e>SideToc</span>
+    },
 
-    <span class=nx>setup</span><span class=p>()</span> <span class=p>{</span>
-        <span class=k>return</span> <span class=p>{</span>
-            <span class=nx>tocValue</span><span class=o>:</span> <span class=p>[]</span>
-        <span class=p>}</span>
-    <span class=p>}</span>
-<span class=p>});</span>
-<span class=p>&lt;/</span><span class=nt>script</span><span class=p>&gt;</span>
-</code></pre></div></article><nav class="no-print post-nav"><a class=prev-post href=https://cocacolf.github.io/blog/2020/><img class=icon-text src=/img/prev.svg>2020</a>
-<a class=next-post href=https://cocacolf.github.io/blog/%E7%BC%96%E5%86%99%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%B7%A5%E5%85%B7%E5%8D%87%E7%BA%A7eslint%E9%85%8D%E7%BD%AE/>编写命令行工具升级eslint配置<img class=icon-text src=/img/next.svg></a></nav><section id=related><h4>See Also</h4><ul><li><a href=/blog/vue-router-issues/>vue-router重复点击报错和新链接跳转失败</a></li><li><a href=/blog/%E7%AE%80%E5%8D%95%E7%89%88html%E6%A8%A1%E6%9D%BF%E5%BC%95%E6%93%8E/>简单版html模板引擎</a></li><li><a href=/blog/node.js-event-loop/>Node.js Event Loop</a></li></ul></section><script src=https://utteranc.es/client.js repo issue-term=url label theme=github-light crossorigin=anonymous async></script><div id=disqus_thread class=no-print></div><script type=text/javascript>(function(){if(window.location.hostname=="localhost")
-return;var dsq=document.createElement('script');dsq.type='text/javascript';dsq.async=true;var disqus_shortname='';dsq.src='//'+disqus_shortname+'.disqus.com/embed.js';(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(dsq);})();</script><noscript>Please enable JavaScript to view the <a href=http://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><hr class=sep></main><footer class="container no-print"><div class=u-footer><a href=mailto:CocaColf@gmail.com><img class=icon-social src=/img/email.svg alt="Email Me!"></a>
-<a href=https://github.com/CocaColf><img class=icon-social src=/img/github.svg alt=Github></a>
-<a href=https://cocacolf.github.io/index.xml target=_blank><img class=icon-social src=/img/feed.svg alt=Feed></a><p>&copy; 2020 CocaColf</p><a href=#brand><img class=icon-text src=/img/toup.svg alt="To Up">
-<span>Back to Up</span></a></div></footer></body></html>
+    <span style=color:#a6e22e>setup</span>() {
+        <span style=color:#66d9ef>return</span> {
+            <span style=color:#a6e22e>tocValue</span><span style=color:#f92672>:</span> []
+        }
+    }
+});
+&lt;/<span style=color:#f92672>script</span>&gt;
+</code></pre></div><div id=vcomments></div><script src=//cdn1.lncld.net/static/js/3.0.4/av-min.js></script><script src=//unpkg.com/valine/dist/Valine.min.js></script><script type=text/javascript>new Valine({el:'#vcomments',appId:'5wCdX2LaFPlapBWb5D7PwjeL-gzGzoHsz',appKey:'TbOwzyyIqoN2h62jdFwidX0L',notify:'false',verify:'false',avatar:'robohash',placeholder:'说点什么吧...',visitor:'true'});</script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>

@@ -1,96 +1,81 @@
-<!doctype html><html lang=en><script>var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?ca263fc43bf7a7d37bc412d545c44489";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();</script><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.78.1"><title>Node.js Event Loop - CocaColf</title><meta name=description content="第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的博文，在这里做几点记录。
-什么是事件循环   event Demultiplexer来处理事件分发，同时把IO操作委托给硬件。它是一种抽象，各操作系统有自己的实现(Linux -> epoll,MacOS -> kqueue,Windows -> IOCP)。为了支持不同的操作系统中不同的IO操作，于是诞生了libuv。
-  当IO操作被处理时，相对应的回调函数就被加入事件队列
-  事件队列执行并清空事件队列
-  循环上述过程
-  事件队列 简化的事件循环的执行阶段顺序
- 这里有几个要点:
-  有两个中间过渡检查: process.nextTick 和 process.resolve，且前者优先级大于后者
-  next tick 队列始终不为空导致IO饿死的问题
-  Timers并不一定会准确执行，与CPU性能和当前所处的事件阶段有关
-  两个很经典的例子
-  // 执行顺序不能保证 setTimeout(function() { console.log('setTimeout'); }, 0); setImmediate(function() { console.log('setImmediate'); }); // setImmediate 一定在 setTimeout 之前执行 const fs = require('fs'); fs.readFile(__filename, () => { setTimeout(() => { console."><link rel="shortcut icon" href=favicon.ico><link rel=stylesheet href=/css/ui.css><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Fira+Mono|Lato|Raleway"></head><body><header class="container no-print"><div class=u-header><nav class=bar><ul><li><a href=/><img class=icon-text src=/img/prev.svg></a></li><li><a href=/about>关于</a></li><li><a href=/readings>我读</a></li><li><a href=/tags>标签</a></li><li><a href=/tags/beyond-programming/>编程之外</a></li><li><a href=/tags/programming/>编程相关</a></li></ul></nav></div></header><main class=container><article><header><hgroup id=brand><h1>Node.js Event Loop</h1><h5><time datetime="2019-04-28 00:00:00 +0000 UTC">Apr 28, 2019</time>
-<span class=no-print>-
-<a href=/tags/%e6%8a%80%e6%9c%af>技术</a>
-<a href=/tags/programming>programming</a>
-<span></h5></hgroup><hr class=sep></header><p>    第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的<a href=https://github.com/zhangxiang958/zhangxiang958.github.io/issues/43>博文</a>，在这里做几点记录。</p><h2 id=什么是事件循环>什么是事件循环</h2><p><img src=https://camo.githubusercontent.com/dd28ae6f0212f319720e8f712d8db15ff8feffc6/687474703a2f2f696d672e696a61727669732e636e2f76322d36363934636163633138343964386336313438333831616161643165616637375f68642e6a7067 alt=事件轮询></p><ul><li><p><code>event Demultiplexer</code>来处理事件分发，同时把IO操作委托给硬件。它是一种抽象，各操作系统有自己的实现(Linux -> epoll,MacOS -> kqueue,Windows -> IOCP)。为了支持不同的操作系统中不同的IO操作，于是诞生了libuv。</p></li><li><p>当IO操作被处理时，相对应的回调函数就被加入事件队列</p></li><li><p>事件队列执行并清空事件队列</p></li><li><p>循环上述过程</p></li></ul><h2 id=事件队列>事件队列</h2><p><strong>简化的事件循环的执行阶段顺序</strong></p><p><img src=https://camo.githubusercontent.com/d94dd80a874eca894c6b9fb7e7ef643f84977835/687474703a2f2f696d672e696a61727669732e636e2f76322d34386333386431663231663438306462363131643962303138323864303762615f722e6a7067 alt=事件队列的执行顺序></p><p>    这里有几个要点:</p><ul><li><p>有两个中间过渡检查: <code>process.nextTick</code> 和 <code>process.resolve</code>，且前者优先级大于后者</p></li><li><p>next tick 队列始终不为空导致IO饿死的问题</p></li><li><p><code>Timers</code>并不一定会准确执行，与CPU性能和当前所处的事件阶段有关</p></li><li><p>两个很经典的例子</p></li></ul><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=c1>// 执行顺序不能保证
-</span><span class=c1></span><span class=nx>setTimeout</span><span class=p>(</span><span class=kd>function</span><span class=p>()</span> <span class=p>{</span>
-    <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=s1>&#39;setTimeout&#39;</span><span class=p>);</span>
-<span class=p>},</span> <span class=mi>0</span><span class=p>);</span>
-<span class=nx>setImmediate</span><span class=p>(</span><span class=kd>function</span><span class=p>()</span> <span class=p>{</span>
-    <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=s1>&#39;setImmediate&#39;</span><span class=p>);</span>
-<span class=p>});</span>
-</code></pre></div><div class=highlight><pre class=chroma><code class=language-js data-lang=js><span class=c1>// setImmediate 一定在 setTimeout 之前执行
-</span><span class=c1></span><span class=kr>const</span> <span class=nx>fs</span> <span class=o>=</span> <span class=nx>require</span><span class=p>(</span><span class=s1>&#39;fs&#39;</span><span class=p>);</span>
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Node.js Event Loop - CocaColf</title><meta property="og:title" content="Node.js Event Loop - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content=" 第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的博文，在这里做几点记录。
+[&amp;hellip;] [&amp;hellip;] event Demultiplexer来处理事件分发，同时 &amp;hellip;"><meta property="og:description" content=" 第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的博文，在这里做几点记录。
+[&amp;hellip;] [&amp;hellip;] event Demultiplexer来处理事件分发，同时 &amp;hellip;"><meta name=twitter:image content="https://camo.githubusercontent.com/dd28ae6f0212f319720e8f712d8db15ff8feffc6/687474703a2f2f696d672e696a61727669732e636e2f76322d36363934636163633138343964386336313438333831616161643165616637375f68642e6a7067"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/>Home</a></li><li><a href=/about/>About</a></li><li><a href=/tags/>Tags</a></li><li><a href=/index.xml>Subscribe</a></li></ul></nav></header><article class=main><header class=title><h1>Node.js Event Loop</h1><h3>2019-04-28</h3><hr></header><p>    第一次接触Node的时候就喜欢上它了，但是那时候学习它的时候，一直感觉入不了门，会写一点但总感觉隔了层膜，挺难受的，后来的渐渐有所感觉是在简单的了解了事件驱动后。再后来就觉得JS层面的Node其实没有太多的东西，于是开始想要去了解下层一点的东西。最近看了一篇非常好的<a href=https://github.com/zhangxiang958/zhangxiang958.github.io/issues/43>博文</a>，在这里做几点记录。</p><h2 id=什么是事件循环>什么是事件循环</h2><p><img src=https://camo.githubusercontent.com/dd28ae6f0212f319720e8f712d8db15ff8feffc6/687474703a2f2f696d672e696a61727669732e636e2f76322d36363934636163633138343964386336313438333831616161643165616637375f68642e6a7067 alt=事件轮询></p><ul><li><p><code>event Demultiplexer</code>来处理事件分发，同时把IO操作委托给硬件。它是一种抽象，各操作系统有自己的实现(Linux -> epoll,MacOS -> kqueue,Windows -> IOCP)。为了支持不同的操作系统中不同的IO操作，于是诞生了libuv。</p></li><li><p>当IO操作被处理时，相对应的回调函数就被加入事件队列</p></li><li><p>事件队列执行并清空事件队列</p></li><li><p>循环上述过程</p></li></ul><h2 id=事件队列>事件队列</h2><p><strong>简化的事件循环的执行阶段顺序</strong></p><p><img src=https://camo.githubusercontent.com/d94dd80a874eca894c6b9fb7e7ef643f84977835/687474703a2f2f696d672e696a61727669732e636e2f76322d34386333386431663231663438306462363131643962303138323864303762615f722e6a7067 alt=事件队列的执行顺序></p><p>    这里有几个要点:</p><ul><li><p>有两个中间过渡检查: <code>process.nextTick</code> 和 <code>process.resolve</code>，且前者优先级大于后者</p></li><li><p>next tick 队列始终不为空导致IO饿死的问题</p></li><li><p><code>Timers</code>并不一定会准确执行，与CPU性能和当前所处的事件阶段有关</p></li><li><p>两个很经典的例子</p></li></ul><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// 执行顺序不能保证
+</span><span style=color:#75715e></span><span style=color:#a6e22e>setTimeout</span>(<span style=color:#66d9ef>function</span>() {
+    <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;setTimeout&#39;</span>);
+}, <span style=color:#ae81ff>0</span>);
+<span style=color:#a6e22e>setImmediate</span>(<span style=color:#66d9ef>function</span>() {
+    <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;setImmediate&#39;</span>);
+});
+</code></pre></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// setImmediate 一定在 setTimeout 之前执行
+</span><span style=color:#75715e></span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>fs</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>require</span>(<span style=color:#e6db74>&#39;fs&#39;</span>);
 
-<span class=nx>fs</span><span class=p>.</span><span class=nx>readFile</span><span class=p>(</span><span class=nx>__filename</span><span class=p>,</span> <span class=p>()</span> <span class=p>=&gt;</span> <span class=p>{</span>
-    <span class=nx>setTimeout</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=p>{</span>
-        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=s1>&#39;timeout&#39;</span><span class=p>);</span>
-    <span class=p>},</span> <span class=mi>0</span><span class=p>);</span>
-    <span class=nx>setImmediate</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=p>{</span>
-        <span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=s1>&#39;immediate&#39;</span><span class=p>);</span>
-    <span class=p>});</span>
-<span class=p>});</span>
+<span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>readFile</span>(<span style=color:#a6e22e>__filename</span>, () =&gt; {
+    <span style=color:#a6e22e>setTimeout</span>(() =&gt; {
+        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;timeout&#39;</span>);
+    }, <span style=color:#ae81ff>0</span>);
+    <span style=color:#a6e22e>setImmediate</span>(() =&gt; {
+        <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#e6db74>&#39;immediate&#39;</span>);
+    });
+});
 </code></pre></div><p><strong>事件循环的阶段</strong></p><p>当Node.js启动时会初始化event loop, 每一个event loop都会包含按如下顺序循环阶段：</p><p><img src=https://user-gold-cdn.xitu.io/2018/8/2/164f6645917f6cce?imageView2/0/w/1280/h/960/format/webp/ignore-error/1 alt=事件循环阶段></p><ul><li><p>Timer ——到期的定时器回调和 interval 回调。</p></li><li><p>Pending IO Callback——处理被挂起的 I/O 事件，包括完成的和失败的。</p></li><li><p>Idle —— 执行一些 libuv 内部操作。</p></li><li><p>Prepare —— 执行一些 I/O 操作的预准备工作。</p></li><li><p>Poll —— <code>可选择性地</code>等待 I/O 操作完成，<code>这里可能会发生Node阻塞</code>。在node.js里，任何异步方法（除timer,close,setImmediate之外）完成时，都会将其callback加到poll queue里,并立即执行。所以Poll阶段：<code>1.处理poll队列（poll quenue）的事件(callback); 2.当到达timers指定的时间时,执行timers的callback;</code>
 这里引用博客上的一段解释:</p></li></ul><blockquote><p>如果event loop进入了 poll阶段，且代码未设定timer，将会发生下面情况：</p><ul><li>如果poll queue不为空，event loop将同步的执行queue里的callback,直至queue为空，或执行的callback到达系统上限;</li></ul></blockquote><blockquote><p>如果poll queue为空，将会发生下面情况：</p><ul><li>如果代码已经被setImmediate()设定了callback, event loop将结束poll阶段进入check阶段，并执行check阶段的queue (check阶段的queue是 setImmediate设定的)</li></ul></blockquote><blockquote><p>如果代码没有设定setImmediate(callback)，event loop将阻塞在该阶段等待callbacks加入poll queue;</p></blockquote><blockquote><p>如果event loop进入了 poll阶段，且代码设定了timer：</p><ul><li>如果poll queue进入空状态时（即poll 阶段为空闲状态），event loop将检查timers,如果有1个或多个timers时间时间已经到达，event loop将按循环顺序进入 timers 阶段，并执行timer queue.</li></ul></blockquote><pre><code>关于这里，我觉得 cNode上这个 [帖子](https://cnodejs.org/topic/57d68794cb6f605d360105bf) 的讨论非常精彩。
 </code></pre><ul><li><p>Check handlers —— 执行一些 I/O 操作的后续处理工作，通常来说，setImmediate 添加的回调也会在这个阶段执行。</p></li><li><p>Close handlers —— 执行一些 close 事件相关的操作比如 socket 连接等等。</p></li><li><p>此外，process.nextTick()不在event loop的任何阶段执行，而是在各个阶段切换的中间执行
-<strong>事件轮询的核心代码</strong></p></li></ul><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=c1>//deps/uv/src/unix/core.c
-</span><span class=c1></span><span class=kt>int</span> <span class=nf>uv_run</span><span class=p>(</span><span class=n>uv_loop_t</span> <span class=o>*</span><span class=n>loop</span><span class=p>,</span> <span class=n>uv_run_mode</span> <span class=n>mode</span><span class=p>)</span> <span class=p>{</span>
-	<span class=kt>int</span> <span class=n>timeout</span><span class=p>;</span>
-	<span class=kt>int</span> <span class=n>r</span><span class=p>;</span>
-	<span class=kt>int</span> <span class=n>ran_pending</span><span class=p>;</span>
-	<span class=c1>//uv__loop_alive返回的是event loop中是否还有待处理的handle或者request
-</span><span class=c1></span>	<span class=c1>//以及closing_handles是否为NULL,如果均没有,则返回0
-</span><span class=c1></span>	<span class=n>r</span> <span class=o>=</span> <span class=n>uv__loop_alive</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-	<span class=c1>//更新当前event loop的时间戳,单位是ms
-</span><span class=c1></span>	<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>r</span><span class=p>)</span>
-    	<span class=n>uv__update_time</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-	<span class=k>while</span> <span class=p>(</span><span class=n>r</span> <span class=o>!=</span> <span class=mi>0</span> <span class=o>&amp;&amp;</span> <span class=n>loop</span><span class=o>-&gt;</span><span class=n>stop_flag</span> <span class=o>==</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
-    	<span class=c1>//使用Linux下的高精度Timer hrtime更新loop-&gt;time,即event loop的时间戳
-</span><span class=c1></span>    	<span class=n>uv__update_time</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//执行判断当前loop-&gt;time下有无到期的Timer,显然在同一个loop里面timer拥有最高的优先级
-</span><span class=c1></span>    	<span class=n>uv__run_timers</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//判断当前的pending_queue是否有事件待处理,并且一次将&amp;loop-&gt;pending_queue中的uv__io_t对应的cb全部拿出来执行
-</span><span class=c1></span>    	<span class=n>ran_pending</span> <span class=o>=</span> <span class=n>uv__run_pending</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//实现在loop-watcher.c文件中,一次将&amp;loop-&gt;idle_handles中的idle_cd全部执行完毕(如果存在的话)
-</span><span class=c1></span>    	<span class=n>uv__run_idle</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//实现在loop-watcher.c文件中,一次将&amp;loop-&gt;prepare_handles中的prepare_cb全部执行完毕(如果存在的话)
-</span><span class=c1></span>    	<span class=n>uv__run_prepare</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
+<strong>事件轮询的核心代码</strong></p></li></ul><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#75715e>//deps/uv/src/unix/core.c
+</span><span style=color:#75715e></span><span style=color:#66d9ef>int</span> <span style=color:#a6e22e>uv_run</span>(uv_loop_t <span style=color:#f92672>*</span>loop, uv_run_mode mode) {
+	<span style=color:#66d9ef>int</span> timeout;
+	<span style=color:#66d9ef>int</span> r;
+	<span style=color:#66d9ef>int</span> ran_pending;
+	<span style=color:#75715e>//uv__loop_alive返回的是event loop中是否还有待处理的handle或者request
+</span><span style=color:#75715e></span>	<span style=color:#75715e>//以及closing_handles是否为NULL,如果均没有,则返回0
+</span><span style=color:#75715e></span>	r <span style=color:#f92672>=</span> uv__loop_alive(loop);
+	<span style=color:#75715e>//更新当前event loop的时间戳,单位是ms
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span>r)
+    	uv__update_time(loop);
+	<span style=color:#66d9ef>while</span> (r <span style=color:#f92672>!=</span> <span style=color:#ae81ff>0</span> <span style=color:#f92672>&amp;&amp;</span> loop<span style=color:#f92672>-&gt;</span>stop_flag <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>) {
+    	<span style=color:#75715e>//使用Linux下的高精度Timer hrtime更新loop-&gt;time,即event loop的时间戳
+</span><span style=color:#75715e></span>    	uv__update_time(loop);
+    	<span style=color:#75715e>//执行判断当前loop-&gt;time下有无到期的Timer,显然在同一个loop里面timer拥有最高的优先级
+</span><span style=color:#75715e></span>    	uv__run_timers(loop);
+    	<span style=color:#75715e>//判断当前的pending_queue是否有事件待处理,并且一次将&amp;loop-&gt;pending_queue中的uv__io_t对应的cb全部拿出来执行
+</span><span style=color:#75715e></span>    	ran_pending <span style=color:#f92672>=</span> uv__run_pending(loop);
+    	<span style=color:#75715e>//实现在loop-watcher.c文件中,一次将&amp;loop-&gt;idle_handles中的idle_cd全部执行完毕(如果存在的话)
+</span><span style=color:#75715e></span>    	uv__run_idle(loop);
+    	<span style=color:#75715e>//实现在loop-watcher.c文件中,一次将&amp;loop-&gt;prepare_handles中的prepare_cb全部执行完毕(如果存在的话)
+</span><span style=color:#75715e></span>    	uv__run_prepare(loop);
 
-    	<span class=n>timeout</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
-    	<span class=c1>//如果是UV_RUN_ONCE的模式,并且pending_queue队列为空,或者采用UV_RUN_DEFAULT(在一个loop中处理所有事件),则将timeout参数置为
-</span><span class=c1></span>    	<span class=c1>//最近的一个定时器的超时时间,防止在uv_io_poll中阻塞住无法进入超时的timer中
-</span><span class=c1></span>    	<span class=k>if</span> <span class=p>((</span><span class=n>mode</span> <span class=o>==</span> <span class=n>UV_RUN_ONCE</span> <span class=o>&amp;&amp;</span> <span class=o>!</span><span class=n>ran_pending</span><span class=p>)</span> <span class=o>||</span> <span class=n>mode</span> <span class=o>==</span> <span class=n>UV_RUN_DEFAULT</span><span class=p>)</span>
-        	<span class=n>timeout</span> <span class=o>=</span> <span class=n>uv_backend_timeout</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//进入I/O处理的函数(重点分析的部分),此处挂载timeout是为了防止在uv_io_poll中陷入阻塞无法执行timers;并且对于mode为
-</span><span class=c1></span>    	<span class=c1>//UV_RUN_NOWAIT类型的uv_run执行,timeout为0可以保证其立即跳出uv__io_poll,达到了非阻塞调用的效果
-</span><span class=c1></span>    	<span class=n>uv__io_poll</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>timeout</span><span class=p>);</span>
-    	<span class=c1>//实现在loop-watcher.c文件中,一次将&amp;loop-&gt;check_handles中的check_cb全部执行完毕(如果存在的话)
-</span><span class=c1></span>    	<span class=n>uv__run_check</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//执行结束时的资源释放,loop-&gt;closing_handles指针指向NULL
-</span><span class=c1></span>    	<span class=n>uv__run_closing_handles</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
+    	timeout <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+    	<span style=color:#75715e>//如果是UV_RUN_ONCE的模式,并且pending_queue队列为空,或者采用UV_RUN_DEFAULT(在一个loop中处理所有事件),则将timeout参数置为
+</span><span style=color:#75715e></span>    	<span style=color:#75715e>//最近的一个定时器的超时时间,防止在uv_io_poll中阻塞住无法进入超时的timer中
+</span><span style=color:#75715e></span>    	<span style=color:#66d9ef>if</span> ((mode <span style=color:#f92672>==</span> UV_RUN_ONCE <span style=color:#f92672>&amp;&amp;</span> <span style=color:#f92672>!</span>ran_pending) <span style=color:#f92672>||</span> mode <span style=color:#f92672>==</span> UV_RUN_DEFAULT)
+        	timeout <span style=color:#f92672>=</span> uv_backend_timeout(loop);
+    	<span style=color:#75715e>//进入I/O处理的函数(重点分析的部分),此处挂载timeout是为了防止在uv_io_poll中陷入阻塞无法执行timers;并且对于mode为
+</span><span style=color:#75715e></span>    	<span style=color:#75715e>//UV_RUN_NOWAIT类型的uv_run执行,timeout为0可以保证其立即跳出uv__io_poll,达到了非阻塞调用的效果
+</span><span style=color:#75715e></span>    	uv__io_poll(loop, timeout);
+    	<span style=color:#75715e>//实现在loop-watcher.c文件中,一次将&amp;loop-&gt;check_handles中的check_cb全部执行完毕(如果存在的话)
+</span><span style=color:#75715e></span>    	uv__run_check(loop);
+    	<span style=color:#75715e>//执行结束时的资源释放,loop-&gt;closing_handles指针指向NULL
+</span><span style=color:#75715e></span>    	uv__run_closing_handles(loop);
 
-    	<span class=k>if</span> <span class=p>(</span><span class=n>mode</span> <span class=o>==</span> <span class=n>UV_RUN_ONCE</span><span class=p>)</span> <span class=p>{</span>
-        	<span class=c1>//如果是UV_RUN_ONCE模式,继续更新当前event loop的时间戳
-</span><span class=c1></span>        	<span class=n>uv__update_time</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-        	<span class=c1>//执行timers,判断是否有已经到期的timer
-</span><span class=c1></span>        	<span class=n>uv__run_timers</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=p>}</span>
-    	<span class=n>r</span> <span class=o>=</span> <span class=n>uv__loop_alive</span><span class=p>(</span><span class=n>loop</span><span class=p>);</span>
-    	<span class=c1>//在UV_RUN_ONCE和UV_RUN_NOWAIT模式中,跳出当前的循环
-</span><span class=c1></span>    	<span class=k>if</span> <span class=p>(</span><span class=n>mode</span> <span class=o>==</span> <span class=n>UV_RUN_ONCE</span> <span class=o>||</span> <span class=n>mode</span> <span class=o>==</span> <span class=n>UV_RUN_NOWAIT</span><span class=p>)</span>
-        	<span class=k>break</span><span class=p>;</span>
-		<span class=p>}</span>
+    	<span style=color:#66d9ef>if</span> (mode <span style=color:#f92672>==</span> UV_RUN_ONCE) {
+        	<span style=color:#75715e>//如果是UV_RUN_ONCE模式,继续更新当前event loop的时间戳
+</span><span style=color:#75715e></span>        	uv__update_time(loop);
+        	<span style=color:#75715e>//执行timers,判断是否有已经到期的timer
+</span><span style=color:#75715e></span>        	uv__run_timers(loop);
+    	}
+    	r <span style=color:#f92672>=</span> uv__loop_alive(loop);
+    	<span style=color:#75715e>//在UV_RUN_ONCE和UV_RUN_NOWAIT模式中,跳出当前的循环
+</span><span style=color:#75715e></span>    	<span style=color:#66d9ef>if</span> (mode <span style=color:#f92672>==</span> UV_RUN_ONCE <span style=color:#f92672>||</span> mode <span style=color:#f92672>==</span> UV_RUN_NOWAIT)
+        	<span style=color:#66d9ef>break</span>;
+		}
 		
-	<span class=c1>//标记当前的stop_flag为0,表示当前的loop执行完毕
-</span><span class=c1></span>	<span class=k>if</span> <span class=p>(</span><span class=n>loop</span><span class=o>-&gt;</span><span class=n>stop_flag</span> <span class=o>!=</span> <span class=mi>0</span><span class=p>)</span>
-    	<span class=n>loop</span><span class=o>-&gt;</span><span class=n>stop_flag</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
-	<span class=c1>//返回r的值
-</span><span class=c1></span>	<span class=k>return</span> <span class=n>r</span><span class=p>;</span>
-<span class=p>}</span>
-</code></pre></div></article><nav class="no-print post-nav"><a class=prev-post href=https://cocacolf.github.io/blog/%E4%BB%80%E4%B9%88%E6%98%AF%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%BC%96%E7%A8%8B%E8%83%BD%E5%8A%9B/><img class=icon-text src=/img/prev.svg>什么才算是真正的编程能力</a>
-<a class=next-post href=https://cocacolf.github.io/blog/%E8%BF%9B%E8%A1%8C%E4%BA%86%E4%B8%80%E6%AC%A1%E8%82%A0%E9%95%9C%E6%A3%80%E6%9F%A5/>进行了一次肠镜检查<img class=icon-text src=/img/next.svg></a></nav><section id=related><h4>See Also</h4><ul><li><a href=/blog/%E4%BB%80%E4%B9%88%E6%98%AF%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%BC%96%E7%A8%8B%E8%83%BD%E5%8A%9B/>什么才算是真正的编程能力</a></li></ul></section><script src=https://utteranc.es/client.js repo issue-term=url label theme=github-light crossorigin=anonymous async></script><div id=disqus_thread class=no-print></div><script type=text/javascript>(function(){if(window.location.hostname=="localhost")
-return;var dsq=document.createElement('script');dsq.type='text/javascript';dsq.async=true;var disqus_shortname='';dsq.src='//'+disqus_shortname+'.disqus.com/embed.js';(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(dsq);})();</script><noscript>Please enable JavaScript to view the <a href=http://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><hr class=sep></main><footer class="container no-print"><div class=u-footer><a href=mailto:CocaColf@gmail.com><img class=icon-social src=/img/email.svg alt="Email Me!"></a>
-<a href=https://github.com/CocaColf><img class=icon-social src=/img/github.svg alt=Github></a>
-<a href=https://cocacolf.github.io/index.xml target=_blank><img class=icon-social src=/img/feed.svg alt=Feed></a><p>&copy; 2020 CocaColf</p><a href=#brand><img class=icon-text src=/img/toup.svg alt="To Up">
-<span>Back to Up</span></a></div></footer></body></html>
+	<span style=color:#75715e>//标记当前的stop_flag为0,表示当前的loop执行完毕
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>if</span> (loop<span style=color:#f92672>-&gt;</span>stop_flag <span style=color:#f92672>!=</span> <span style=color:#ae81ff>0</span>)
+    	loop<span style=color:#f92672>-&gt;</span>stop_flag <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+	<span style=color:#75715e>//返回r的值
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>return</span> r;
+}
+</code></pre></div><div id=vcomments></div><script src=//cdn1.lncld.net/static/js/3.0.4/av-min.js></script><script src=//unpkg.com/valine/dist/Valine.min.js></script><script type=text/javascript>new Valine({el:'#vcomments',appId:'5wCdX2LaFPlapBWb5D7PwjeL-gzGzoHsz',appKey:'TbOwzyyIqoN2h62jdFwidX0L',notify:'false',verify:'false',avatar:'robohash',placeholder:'说点什么吧...',visitor:'true'});</script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>
