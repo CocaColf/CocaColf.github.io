@@ -1,0 +1,347 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>走马观Nest.js - CocaColf</title><meta property="og:title" content="走马观Nest.js - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content="从19年夏天偶然了解 Nest.js 至今，我已经使用它构建了三个应用，不过应用的规模都不大。每个应用之间都相隔半年以上，但每一次它给我的开发体验都是十分舒服的，它已成为目前我构建后端应用的首选框架。最近在开发代码质量检测工具的服务端时我依然选择它开发。这篇文章对 Nest.js 进行了简单的介绍，通过此文能够基本了解 Nest.js 的使用和开发。
+[&amp;hellip;] &amp;hellip;"><meta property="og:description" content="从19年夏天偶然了解 Nest.js 至今，我已经使用它构建了三个应用，不过应用的规模都不大。每个应用之间都相隔半年以上，但每一次它给我的开发体验都是十分舒服的，它已成为目前我构建后端应用的首选框架。最近在开发代码质量检测工具的服务端时我依然选择它开发。这篇文章对 Nest.js 进行了简单的介绍，通过此文能够基本了解 Nest.js 的使用和开发。
+[&amp;hellip;] &amp;hellip;"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/>Home</a></li><li><a href=/about/>About</a></li><li><a href=/tags/>Tags</a></li><li><a href=/index.xml>Subscribe</a></li></ul></nav></header><article class=main><header class=title><h1>走马观Nest.js</h1><h3>2021-07-02</h3><hr></header><h2 id=tldr>TL;DR</h2><p>从19年夏天偶然了解 <a href=https://docs.nestjs.com/>Nest.js</a> 至今，我已经使用它构建了三个应用，不过应用的规模都不大。每个应用之间都相隔半年以上，但每一次它给我的开发体验都是十分舒服的，它已成为目前我构建后端应用的首选框架。最近在开发<a href=https://cocacolf.vercel.app/blog/%E5%BC%80%E5%8F%91%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7/>代码质量检测工具</a>的服务端时我依然选择它开发。这篇文章对 Nest.js 进行了简单的介绍，通过此文能够基本了解 Nest.js 的使用和开发。</p><hr><p>初次接触 Nest.js，可能会觉得它的概念特别多，引入了 <code>Providers</code> 、<code>Pipes</code> 等概念。我个人觉得这些概念的出现是很自然的，而且这恰好是它最大的特点，一个后端应用从请求到达至响应的每一个环节都有具体的执行者，这种“专人专事”的方式使得项目非常清晰。</p><h2 id=控制器-controllers>控制器 (Controllers)</h2><p>在 Nest.js 中，每一个控制器是一个类，我们使用 <code>@Controller</code> 来标识它，配合 @Get/Post 等 method 标识，即可完成一个控制器。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Controller</span>, <span style=color:#a6e22e>Get</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Controller</span>(<span style=color:#e6db74>&#39;test&#39;</span>)
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestController</span> {
+	<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Get</span>(<span style=color:#e6db74>&#39;list&#39;</span>)
+	<span style=color:#a6e22e>getList</span> (<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Query</span>(<span style=color:#e6db74>&#39;name&#39;</span>) <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>) {}
+}
+</code></pre></div><p>而且框架内置了非常多的 HttpStatus 和 HttpExceptions，极方便的辅助开发。</p><h2 id=提供者-providers>提供者 (Providers)</h2><p>Providers 是一个很抽象的概念，其几乎可以是任何一个类，通过依赖注入到不同的类中，让被注入对象的创建工作委托给 Nest.js 运行时，使得不同模块/类之间的使用变得非常简单。使用 @Injectable 修饰一个类，即可将其变成 Providers。</p><p>比如我们上面有了控制器，根据 MVC 思想，一般我们的业务处理会放在 M 层去处理。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testService.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> {<span style=color:#a6e22e>Injectable</span>} <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Injectable</span>()
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestService</span> {
+	<span style=color:#a6e22e>hanleList</span> () {
+	
+	}
+}
+</code></pre></div><p>那么在我们的其他模块，便可以通过依赖注入使用这个 Providers，你不需要去做诸如 <code>new TestService()</code> 的事情。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Controller</span>, <span style=color:#a6e22e>Get</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>TestService</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;testService.ts&#39;</span>
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Controller</span>(<span style=color:#e6db74>&#39;test&#39;</span>)
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestController</span> {
+	<span style=color:#a6e22e>constructor</span> (
+		<span style=color:#66d9ef>private</span> <span style=color:#a6e22e>readonly</span> <span style=color:#a6e22e>testService</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>TestService</span>
+	) {}
+	
+	<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Get</span>(<span style=color:#e6db74>&#39;list&#39;</span>)
+	<span style=color:#a6e22e>getList</span> () {
+		<span style=color:#a6e22e>testService</span>.<span style=color:#a6e22e>hanleList</span>();
+	}
+}
+</code></pre></div><h2 id=模块>模块</h2><p>从外部看，模块则是一个具体功能的所有系统的集合。Nest.js 应用是由不同的模块组成，就像是前端开发中的组件，由根组件出发，由各个子组件组成。模块由 @Module 进行修饰，其内部定义模块的各个元素：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testModule.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Module</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>TestController</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;testController.ts&#39;</span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>TestService</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;testService.ts&#39;</span>
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+	<span style=color:#a6e22e>controllers</span><span style=color:#f92672>:</span> [<span style=color:#a6e22e>TestController</span>],
+	<span style=color:#a6e22e>providers</span><span style=color:#f92672>:</span> [<span style=color:#a6e22e>TestService</span>]
+})
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestModule</span> {}
+</code></pre></div><p>那么在其他模块，如果想使用某一个模块，就像是前端开发中使用某一个组件一样，只需要在父模块中引入即可：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// rootModule.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Module</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>TestModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;testModule.ts&#39;</span>
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+	<span style=color:#66d9ef>import</span><span style=color:#f92672>:</span> [
+		<span style=color:#a6e22e>TestModule</span>
+	]
+})
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>AppModule</span> {}
+</code></pre></div><p>当了解了这几个概念后，不考虑工程化的情况下，已经足够我们去编写应用。所以其他概念的引入，则是将开发中各个相似的处理抽离出来。</p><h2 id=中间件>中间件</h2><p>中间件是在路由处理之前调用的函数，可以使用它在路由请求处理前做一些事情，譬如对请求进行修改。Nest.js 中使用中间件很简单，大致分为两类，应用中间件和全局中间件。</p><p><strong>应用中间件</strong></p><p>应用中间件即只用在某个模块上，它的使用一般是在模块文件中，比如下面这个中间件 LoggerMiddleware 则提供给 <code>/test/xxx</code> 路由使用</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js>
+<span style=color:#75715e>// testModule.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Module</span>, <span style=color:#a6e22e>MiddlewareConsumer</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#a6e22e>LoggerMiddleware</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./LoggerMiddleware.ts&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+	<span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>})
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestModule</span> {
+    <span style=color:#a6e22e>configure</span>(<span style=color:#a6e22e>consumer</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>MiddlewareConsumer</span>) {
+    <span style=color:#a6e22e>consumer</span>
+      .<span style=color:#a6e22e>apply</span>(<span style=color:#a6e22e>LoggerMiddleware</span>)
+      .<span style=color:#a6e22e>forRoutes</span>(<span style=color:#e6db74>&#39;test&#39;</span>);
+  }
+}
+
+</code></pre></div><p><strong>全局中间件</strong></p><p>全局中间件则是对整个应用使用，我们需要在 Nest.js 构建的应用的启动文件里 <code>use</code> 即可：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// main.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>NestFactory</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/core&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>AppModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./appModule.ts&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>logger</span> } <span style=color:#a6e22e>form</span> <span style=color:#e6db74>&#39;./loggerMiddleware.ts&#39;</span>;
+
+<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>bootstrap</span> () {
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>app</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>NestFactory</span>.<span style=color:#a6e22e>create</span>(<span style=color:#a6e22e>AppModule</span>);
+    <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>logger</span>);
+    <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>listen</span>(<span style=color:#ae81ff>80</span>);
+}
+</code></pre></div><h2 id=异常过滤器>异常过滤器</h2><p>程序出现异常很正常，但是对于用户侧，我们并不希望用户看到具体的异常报错，而是提供给其清晰地友好的信息。</p><p>一般来说，我们常在逻辑中这么抛出异常：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testService.ts
+</span><span style=color:#75715e></span>
+<span style=color:#75715e>// do something...
+</span><span style=color:#75715e></span><span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>xxx</span>) {
+    <span style=color:#66d9ef>throw</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>HttpException</span>({
+        <span style=color:#a6e22e>status</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>HttpStatus</span>.<span style=color:#a6e22e>FORBIDDEN</span>,
+        <span style=color:#a6e22e>error</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;这里是给用户看的错误信息&#39;</span>,
+      }, <span style=color:#a6e22e>HttpStatus</span>.<span style=color:#a6e22e>FORBIDDEN</span>);
+}
+</code></pre></div><p>于是客户端便收到了如下的响应：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+    <span style=color:#f92672>&#34;status&#34;</span>: <span style=color:#ae81ff>403</span>,
+  	<span style=color:#f92672>&#34;error&#34;</span>: <span style=color:#e6db74>&#34;这里是给用户看的错误信息&#34;</span>
+}
+</code></pre></div><blockquote><p>上面的 <code>HttpException</code> 和 <code>HttpStatus</code> 分别是 Nest.js 内置的类和枚举器。</p></blockquote><p>但是并不是所有的异常我们都希望在每个地方这么处理，有时候我们想统一处理异常，并做一些诸如日志记录的事情，这时候就要自己实现异常过滤器。下面是一个示例：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// allExceptionFilter.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { 
+    <span style=color:#a6e22e>ArgumentsHost</span>, 
+    <span style=color:#a6e22e>Catch</span>, 
+    <span style=color:#a6e22e>ExceptionFilter</span>, 
+    <span style=color:#a6e22e>HttpException</span>, 
+    <span style=color:#a6e22e>HttpStatus</span>, 
+    <span style=color:#a6e22e>Injectable</span>, 
+    <span style=color:#a6e22e>Logger</span> 
+} <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;@nestjs/common&#34;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Injectable</span>()
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Catch</span>()
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>AllExceptionFilter</span> <span style=color:#66d9ef>implements</span> <span style=color:#a6e22e>ExceptionFilter</span> {
+    <span style=color:#66d9ef>catch</span>(<span style=color:#a6e22e>exception</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>unknown</span>, <span style=color:#a6e22e>host</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>ArgumentsHost</span>) {
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>ctx</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>host</span>.<span style=color:#a6e22e>switchToHttp</span>();
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>response</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>ctx</span>.<span style=color:#a6e22e>getResponse</span>();
+
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>status</span> <span style=color:#f92672>=</span>
+        <span style=color:#a6e22e>exception</span> <span style=color:#66d9ef>instanceof</span> <span style=color:#a6e22e>HttpException</span>
+            <span style=color:#f92672>?</span> <span style=color:#a6e22e>exception</span>.<span style=color:#a6e22e>getStatus</span>()
+            <span style=color:#f92672>:</span> <span style=color:#a6e22e>HttpStatus</span>.<span style=color:#a6e22e>INTERNAL_SERVER_ERROR</span>;
+
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>msg</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>exception</span>[<span style=color:#e6db74>&#39;response&#39;</span>] <span style=color:#f92672>&amp;&amp;</span> <span style=color:#a6e22e>exception</span>[<span style=color:#e6db74>&#39;response&#39;</span>][<span style=color:#e6db74>&#39;msg&#39;</span>] <span style=color:#f92672>||</span> <span style=color:#a6e22e>exception</span>[<span style=color:#e6db74>&#39;message&#39;</span>] <span style=color:#f92672>||</span> <span style=color:#e6db74>&#39;服务端错误&#39;</span>;
+        <span style=color:#a6e22e>Logger</span>.<span style=color:#a6e22e>error</span>(<span style=color:#e6db74>`捕获异常，</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>msg</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>, <span style=color:#e6db74>&#39;exception&#39;</span>);
+        
+        <span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>status</span>(<span style=color:#ae81ff>200</span>).<span style=color:#a6e22e>json</span>({
+            <span style=color:#a6e22e>statusCode</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>200</span>,
+            <span style=color:#a6e22e>success</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>0</span>,
+            <span style=color:#a6e22e>msg</span>
+        });
+    }
+}
+</code></pre></div><p>可以看到，异常过滤器需要继承 <code>ExceptionFilter</code>，并重载 <code>catch</code> 方法。异常过滤器也是一个 Provider。</p><p>要使用这个异常过滤器，我们只需要在目标 controller 上用 <code>UseFilters</code> 装饰器声明即可：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testController.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Controller</span>, <span style=color:#a6e22e>UseFilters</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nest/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>AllExceptionFilter</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./allExceptionFilter&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Controller</span>(<span style=color:#e6db74>&#39;test&#39;</span>)
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>UseFilters</span>(<span style=color:#66d9ef>new</span> <span style=color:#a6e22e>AllExceptionFilter</span>())
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestController</span> {}
+</code></pre></div><h2 id=管道>管道</h2><p>从客户端传到路由控制器的数据，会经过管道，所以管道是数据传输的管子，在这里我们可以对数据进行：</p><ul><li>转换</li><li>验证</li></ul><p>如果在管道层抛出异常，则请求并不会到达路由层。</p><p>假设我们已经存在一个叫做 <code>testPipe</code> 的管道，我们要使用它对 <code>/test/report</code> 接口的数据进行验证或转换，只需要：</p><ul><li>使用 <code>UsePipes</code> 声明要使用的管道</li><li>将参数需满足的形式传给管道 [非必须]</li></ul><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testController.ts
+</span><span style=color:#75715e></span>
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Controller</span>(<span style=color:#e6db74>&#39;test&#39;</span>)
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestController</span> {
+    
+    <span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Post</span>(<span style=color:#e6db74>&#39;report&#39;</span>)
+    <span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>UsePipes</span>(<span style=color:#66d9ef>new</span> <span style=color:#a6e22e>TestPipe</span>(<span style=color:#a6e22e>testPipeSchema</span>))
+    <span style=color:#a6e22e>handleReport</span> (<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Body</span>() <span style=color:#a6e22e>reportData</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>reportData</span>) {
+        <span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>    }
+}
+</code></pre></div><p>很显然，管道内部则是对数据进行处理。为了再加深印象理解管道，我们简单实现 testPipe 这个管道。</p><p>一个管道需要实现 <code>PipeTransform</code>， 而 transform 方法中 value 变量为当前处理的参数，即我们路由中收到的参数； metaData 中包含有请求上下文的信息。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testPipe.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { 
+    <span style=color:#a6e22e>Injectable</span>, 
+    <span style=color:#a6e22e>PipeTransform</span>, 
+    <span style=color:#a6e22e>ArgumentMetadata</span>, 
+    <span style=color:#a6e22e>BadRequestException</span>, 
+    <span style=color:#a6e22e>HttpStatus</span> 
+} <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;@nestjs/common&#34;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Injectable</span>()
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestPipe</span> <span style=color:#66d9ef>implements</span> <span style=color:#a6e22e>PipeTransform</span> {
+    <span style=color:#a6e22e>transform</span> (<span style=color:#a6e22e>value</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>reportData</span>, <span style=color:#a6e22e>metaData</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>ArgumentMetadata</span>) {
+        <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span>Array.<span style=color:#a6e22e>isarray</span>(<span style=color:#a6e22e>value</span>)) {
+            <span style=color:#66d9ef>throw</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>BadRequestException</span>({
+               <span style=color:#a6e22e>status</span><span style=color:#f92672>:</span>  <span style=color:#a6e22e>HttpStatus</span>.<span style=color:#a6e22e>BAD_REQUEST</span>,
+               <span style=color:#a6e22e>message</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;参数错误，xxx必须是数组&#39;</span>
+            });
+        }
+    }
+    
+    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>value</span>;
+}
+</code></pre></div><p>Nest.js 中也内置了许多有用的管道，对于许多场景都可以开箱即用。而且我们当然也可以绑定全局的管道，在 <code>main.ts</code> 中 <code>use</code> 即可：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// ...
+</span><span style=color:#75715e></span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>useGlobalPipes</span>(<span style=color:#66d9ef>new</span> <span style=color:#a6e22e>ValidationPipe</span>());
+<span style=color:#75715e>// ...
+</span></code></pre></div><h2 id=守卫>守卫</h2><p>守卫从名字也看得出来，它的工作就是询问“来者何人”——鉴权。当一个操作请求到达，一般来说我们的应用针对它需要做两件事情：</p><ul><li>我们的对某些操作（代码里的函数）需要定义什么角色或者说具备什么凭证才能执行，即定义条件</li><li>守卫里要校验当前请求者是否是这个角色或具备凭证，即验证条件</li></ul><p>Nest.js 的设计也正是如此，下面我们从这两个角度来看看 Nest.js 里 守卫是怎么样的。先假设我们构建了一个叫做 RolesGuard 的守卫。</p><p><strong>定义条件</strong></p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testController.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Controller</span>, <span style=color:#a6e22e>UseGuards</span>, <span style=color:#a6e22e>Post</span>, <span style=color:#a6e22e>SetMetadata</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>RolesGuard</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./rolesGuard.ts&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Controller</span>(<span style=color:#e6db74>&#39;test&#39;</span>)
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>UseGuards</span>(<span style=color:#a6e22e>RolesGuard</span>)
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestController</span> {
+    <span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Post</span>(<span style=color:#e6db74>&#39;deleteValue&#39;</span>)
+    <span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>SetMetadata</span>(<span style=color:#e6db74>&#39;roles&#39;</span>, [<span style=color:#e6db74>&#39;admin&#39;</span>, <span style=color:#e6db74>&#39;admin2&#39;</span>])
+    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>deleteValue</span> (<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Body</span>() <span style=color:#a6e22e>deleteItem</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>) {
+        <span style=color:#75715e>// ....
+</span><span style=color:#75715e></span>    }
+}
+</code></pre></div><p>解释一下这段代码：</p><ul><li>首先在控制器上通过 <code>UseGuard</code> 使用了这个守卫</li><li>在 deleteValue 这个操作上，通过 <code>setMetadata</code> 这个装饰器指定了权限，即 roles 为 <code>['admin', 'admin2']</code> 中的任意一个才可以</li></ul><p><strong>验证条件</strong></p><p>下面我们来实现这个守卫，来看看守卫的原理。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// rolesGuard.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Injectable</span>, <span style=color:#a6e22e>CanActivate</span>, <span style=color:#a6e22e>ExecutionContext</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Reflector</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/core&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Injectable</span>()
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>RolesGuard</span> <span style=color:#66d9ef>implements</span> <span style=color:#a6e22e>CanActivate</span> {
+  <span style=color:#a6e22e>constructor</span>(<span style=color:#66d9ef>private</span> <span style=color:#a6e22e>reflector</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Reflector</span>) {}
+
+  <span style=color:#a6e22e>canActivate</span>(<span style=color:#a6e22e>context</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>ExecutionContext</span>)<span style=color:#f92672>:</span> <span style=color:#66d9ef>boolean</span> {
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>roles</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>reflector</span>.<span style=color:#a6e22e>get</span><span style=color:#f92672>&lt;</span><span style=color:#a6e22e>string</span>[]<span style=color:#f92672>&gt;</span>(<span style=color:#e6db74>&#39;roles&#39;</span>, <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>getHandler</span>());
+    <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span><span style=color:#a6e22e>roles</span>) {
+      <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>;
+    }
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>request</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>switchToHttp</span>().<span style=color:#a6e22e>getRequest</span>();
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>user</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>request</span>.<span style=color:#a6e22e>user</span>;
+    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>roles</span>.<span style=color:#a6e22e>includes</span>(<span style=color:#a6e22e>user</span>.<span style=color:#a6e22e>roles</span>);
+  }
+}
+
+</code></pre></div><ul><li>守卫也是一个 Provider，因此我们在 Controller 中直接使用的 RolesGuard，而没有 <code>new RolesGuard()</code></li><li>通过 <code>canActivate</code> 返回的布尔值决定是否通过验证</li><li>在守卫中，可以通过 <code>context</code> 参数拿到请求的上下文。除了示例中可以拿到 request 外，还可以知道这个请求将会被哪个方法处理（getHandler）等信息</li><li>我们可以通过 <code>Reflector</code> 这个反射器，拿到 Controller 中通过 <code>setMetadata</code> 设置的条件</li></ul><p>怎么样，这种依赖注入解耦后，整个结构是不是赏心悦目。</p><h2 id=拦截器>拦截器</h2><p>当我们想要在函数或整个应用执行前/后做一些事情，但是又不想对其有侵入性时，便可以使用拦截器。比如说：</p><ul><li>想统计一下函数执行时间，侵入性的做法是不是就需要在函数开始前后获取时间然后运行完后相减</li><li>想对所有请求的响应结果做一个统一的数据格式转换</li></ul><p>这种不入侵原程序来影响原程序的思想便是面向切面编程（AOP）。下面看看 Nest.js 中的拦截器，先假设我们定义了叫 <code>ResponeInterceptor</code> 的拦截器，它将请求的响应转成统一格式。</p><p><strong>使用拦截器</strong></p><p>只需要在控制器或者方法上使用 <code>UseInterceptors</code> 装饰器即可。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testController.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Controller</span>, <span style=color:#a6e22e>UseInterceptors</span>, <span style=color:#a6e22e>Get</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nest/common&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Controller</span>(<span style=color:#e6db74>&#39;test&#39;</span>)
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>UseInterceptors</span>(<span style=color:#a6e22e>ResponeInterceptor</span>)
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>TestController</span> {
+    <span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Get</span>(<span style=color:#e6db74>&#39;getValue&#39;</span>)
+    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>getValue</span> (<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Query</span>() <span style=color:#a6e22e>id</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>) {
+        <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#39;这是获取的数据&#39;</span>;
+    }
+}
+</code></pre></div><p><strong>拦截器实现</strong></p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>CallHandler</span>, <span style=color:#a6e22e>ExecutionContext</span>, <span style=color:#a6e22e>Injectable</span>, <span style=color:#a6e22e>NestInterceptor</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;@nestjs/common&#34;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Observable</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;rxjs&#34;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>map</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;rxjs/operators&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Injectable</span>()
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>RequestInterceptor</span> <span style=color:#66d9ef>implements</span> <span style=color:#a6e22e>NestInterceptor</span> {
+    <span style=color:#a6e22e>intercept</span> (<span style=color:#a6e22e>context</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>ExecutionContext</span>, <span style=color:#a6e22e>next</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>CallHandler</span>)<span style=color:#f92672>:</span> <span style=color:#a6e22e>Observable</span><span style=color:#f92672>&lt;</span><span style=color:#a6e22e>any</span><span style=color:#f92672>&gt;</span> {
+        <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>next</span>
+            .<span style=color:#a6e22e>handle</span>()
+            .<span style=color:#a6e22e>pipe</span>(<span style=color:#a6e22e>map</span>(<span style=color:#a6e22e>data</span> =&gt; {
+                <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>baseResponse</span> <span style=color:#f92672>=</span> {
+                    <span style=color:#a6e22e>success</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>1</span>,
+                    <span style=color:#a6e22e>data</span><span style=color:#f92672>:</span> <span style=color:#66d9ef>null</span>,
+                    <span style=color:#a6e22e>msg</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;&#39;</span>
+                };
+                
+                <span style=color:#66d9ef>return</span> Object.<span style=color:#a6e22e>assign</span>(<span style=color:#a6e22e>baseResponse</span>, <span style=color:#a6e22e>data</span>);
+            }));
+    }
+}
+</code></pre></div><p>这段拦截器的功能则是将每个路由处理中返回的数据以 data 字段返回给客户端。拦截器的几个要素：</p><ul><li>实现 <code>NestInterceptor</code> 接口的 intercept 方法</li><li>intercept 方法的参数中，context 参数和守卫中一致，即在拦截器中也可以获得请求、方法执行者等信息</li><li><code>next.handle()</code> 实际上是在执行对应路由的方法，返回值为 <code>Observable</code> 流，比如控制器中的 getValue 方法。然后 <code>pipe</code> 中订阅了 handle 返回的 <code>Observable</code>，于是可以在 map 做想要对值做的事情。这部分实际上是 <a href=%5BRxJS%5D(https://rxjs.dev/guide/overview)>Rxjs</a> 的知识。</li></ul><p>顺带一提，我们甚至还可以在拦截器里处理异常。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// ...
+</span><span style=color:#75715e></span><span style=color:#a6e22e>intercept</span>(<span style=color:#a6e22e>context</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>ExecutionContext</span>, <span style=color:#a6e22e>next</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>CallHandler</span>)<span style=color:#f92672>:</span> <span style=color:#a6e22e>Observable</span><span style=color:#f92672>&lt;</span><span style=color:#a6e22e>any</span><span style=color:#f92672>&gt;</span> {
+    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>next</span>
+      .<span style=color:#a6e22e>handle</span>()
+      .<span style=color:#a6e22e>pipe</span>(
+        <span style=color:#a6e22e>catchError</span>(<span style=color:#a6e22e>err</span> =&gt; <span style=color:#a6e22e>throwError</span>(<span style=color:#66d9ef>new</span> <span style=color:#a6e22e>BadGatewayException</span>())),
+      );
+  }
+</code></pre></div><p>一切准备就绪后，还需要在 Module 里声明拦截器：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>APP_INTERCEPTOR</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/core&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>RequestInterceptor</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./requestInterceptor.ts&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+    <span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>    <span style=color:#a6e22e>providers</span><span style=color:#f92672>:</span> [
+        {
+            <span style=color:#a6e22e>provide</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>APP_INTERCEPTOR</span>,
+            <span style=color:#a6e22e>useClass</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>RequestInterceptor</span>
+        }
+    ],
+    <span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>})
+</code></pre></div><hr><h2 id=其他>其他</h2><h3 id=使用-express-生态>使用 Express 生态</h3><p>Nest.js 底层基于 Express.js，因此可以使用 Express 的周边生态。</p><p><strong>静态资源、跨域、body大小限制</strong></p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// main.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>serverStatic</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;serve-static&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>AppModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./appModule.ts&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>json</span>, <span style=color:#a6e22e>urlencoded</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;body-parser&#39;</span>;
+
+<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>bodyLimit</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;50mb&#39;</span>;
+<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>bootstrap</span>() {
+  <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>app</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>NestFactory</span>.<span style=color:#a6e22e>create</span>(<span style=color:#a6e22e>AppModule</span>);
+
+  <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>enableCors</span>();
+  <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>json</span>({<span style=color:#a6e22e>limit</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>bodyLimit</span>}));
+  <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>urlencoded</span>({<span style=color:#a6e22e>limit</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>bodyLimit</span>, <span style=color:#a6e22e>extended</span><span style=color:#f92672>:</span> <span style=color:#66d9ef>true</span>}));
+  <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#e6db74>&#39;/&#39;</span>, <span style=color:#a6e22e>serverStatic</span>(<span style=color:#a6e22e>path</span>.<span style=color:#a6e22e>join</span>(<span style=color:#a6e22e>__dirname</span>, <span style=color:#e6db74>&#39;../public&#39;</span>), {
+    <span style=color:#a6e22e>maxAge</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;1d&#39;</span>
+  }));
+
+  <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>listen</span>(<span style=color:#ae81ff>80</span>);
+}
+
+<span style=color:#a6e22e>bootstrap</span>();
+</code></pre></div><h3 id=数据库>数据库</h3><p>以 MongoDB 为例，我们数据存储在 test 这个数据库里。</p><p><strong>安装依赖</strong></p><p><code>npm i @nestjs/mongoose mongoose</code></p><p><strong>建立数据库连接</strong></p><p>在根模块里（app.module.ts）:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// app.module.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Module</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>MongooseModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/mongoose&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+    <span style=color:#a6e22e>imports</span><span style=color:#f92672>:</span> [
+        <span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>        <span style=color:#a6e22e>MongooseModule</span>.<span style=color:#a6e22e>forRoot</span>(<span style=color:#e6db74>&#39;mongodb://xxx:27017/test&#39;</span>)
+    ]
+})
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>AppModule</span> {}
+</code></pre></div><p><strong>创建数据表 schema 和文档接口</strong></p><p>下面指定了 People 这个数据表的字段和类型：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// peopleSchema.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>mongoose</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;mongoose&#39;</span>;
+
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>peopleSchema</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>mongoose</span>.<span style=color:#a6e22e>Schema</span>({
+    <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> String,
+    <span style=color:#a6e22e>address</span><span style=color:#f92672>:</span> String,
+    <span style=color:#a6e22e>telephone</span><span style=color:#f92672>:</span> String
+    <span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>});
+
+<span style=color:#75715e>// peopleDocument.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Document</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;mongoose&#39;</span>;
+
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>interface</span> <span style=color:#a6e22e>PeopleDocument</span> <span style=color:#a6e22e>extent</span> <span style=color:#a6e22e>Document</span> {
+    <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>,
+    <span style=color:#a6e22e>address</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>,
+    <span style=color:#a6e22e>telephone</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>
+    <span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>};
+</code></pre></div><p><strong>在某个业务模块里使用表</strong></p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testModule.ts
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Module</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>MongooseModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/mongoose&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>people</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./peopleSchema.ts&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+    <span style=color:#a6e22e>imports</span><span style=color:#f92672>:</span> [
+        <span style=color:#a6e22e>MongooseModule</span>.<span style=color:#a6e22e>forFeature</span>([
+            {
+                <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;People&#39;</span>,    <span style=color:#75715e>// 表名
+</span><span style=color:#75715e></span>                <span style=color:#a6e22e>schema</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>peopleSchema</span>
+            }
+        ])
+    ]
+})
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>BcodeModule</span> {}
+</code></pre></div><p><strong>业务中注入模型</strong></p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// testService.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Injectable</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>InjectModel</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/mongoose&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>peopleDocument</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;./peopleDocument.ts&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Injectable</span>()
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>testService</span> {
+    <span style=color:#a6e22e>constructor</span> (
+    	<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>InjectModel</span>(<span style=color:#e6db74>&#39;People&#39;</span>) <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>readonly</span> <span style=color:#a6e22e>peopleModel</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Model</span><span style=color:#f92672>&lt;</span><span style=color:#a6e22e>peopleDocument</span><span style=color:#f92672>&gt;</span>
+    ) {}
+    
+    <span style=color:#75715e>// 就可以在业务中操作数据表了
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>findAll</span> () {
+        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>await</span> <span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>peopleModel</span>.<span style=color:#a6e22e>find</span>({});
+    }
+}
+</code></pre></div><p>官方文档有很多非常详细的[技术介绍](<a href=https://docs.nestjs.com/techniques/database>Database | NestJS - A progressive Node.js framework</a>)</p><hr><p>上述基本上简单但是又较全面的涵盖了 Nest.js 的内容，了解这些已经可以开始使用它构建一般性应用了。经过上面的走马观花，对 Nest.js 高度解耦的特点有了很直观的感受，除此之外，良好的开发体验还来自于非常完善的类型提示所带来的 TypeScript 编码舒适度；cli 快速创建控制器、模型等文件。不过也不得不承认，相比于其他 Node.js 框架，Nest.js 比较重，于是有一种论调是：既然都选择了 Nest.js，为何不干脆上 Java？很显然，作为前端开发工程师，选择上自然会更倾向于 JavaScript。</p><p>如果你感觉 Nest.js 有让你使用的欲望，那不妨开始构建你的第一个 Nest.js 应用。</p><h4>Comments:</h4><div id=cusdis_thread data-host=https://cusdis.com data-app-id=a2f9224a-c294-4108-998e-c8818b5dec9e data-page-id=cocacolf-blog data-page-url=https://cocacolf.github.io data-page-title="my blog"></div><script async defer src=https://cusdis.com/js/cusdis.es.js></script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>
