@@ -99,6 +99,13 @@ li {
   padding: 0;
 }
 
+ul.home_list {
+  list-style: none;
+}
+ul.home_list li {
+  margin-bottom: 16px;
+}
+
 /* Links */
 
 a {
