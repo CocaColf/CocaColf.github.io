@@ -1,0 +1,150 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Nest.js任务队列实现远程代码扫描 - CocaColf</title><meta property="og:title" content="Nest.js任务队列实现远程代码扫描 - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content=" 之前开发的代码质量检测工具存在一个问题：在大部分时候开发业务代码已经够费神了，开发者并不会主动使用这个工具给代码打分，而且万一检查出来很多问题还得改，这不是没事找事吗？但是你们不使用我怎么完成我的OKR呢？为了能够让工具的使用更加无感知，结合 CICD 是一种比较好的做法，每次提交合并请求就自动检查，有问题这个请求就不能被合入，再添以邮件通知告警等功能，则可对项目实现一次配置，持续监察。
+ 问题 &amp;hellip;"><meta property="og:description" content=" 之前开发的代码质量检测工具存在一个问题：在大部分时候开发业务代码已经够费神了，开发者并不会主动使用这个工具给代码打分，而且万一检查出来很多问题还得改，这不是没事找事吗？但是你们不使用我怎么完成我的OKR呢？为了能够让工具的使用更加无感知，结合 CICD 是一种比较好的做法，每次提交合并请求就自动检查，有问题这个请求就不能被合入，再添以邮件通知告警等功能，则可对项目实现一次配置，持续监察。
+ 问题 &amp;hellip;"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/tags/writing/>文字</a></li><li><a href=/tags/technical/>技术</a></li><li><a href=/about/>关于</a></li><li><a href=/tags/>标签</a></li><li><a href=/index.xml>订阅</a></li></ul></nav></header><article class=main><header class=title><h1>Nest.js任务队列实现远程代码扫描</h1><h3>2021-10-11</h3><hr></header><p>    之前开发的<a href=https://cocacolf.vercel.app/blog/%E5%BC%80%E5%8F%91%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7/>代码质量检测工具</a>存在一个问题：在大部分时候开发业务代码已经够费神了，开发者并不会主动使用这个工具给代码打分，而且万一检查出来很多问题还得改，这不是没事找事吗？但是<del>你们不使用我怎么完成我的OKR呢？</del>为了能够让工具的使用更加无感知，结合 CICD 是一种比较好的做法，每次提交合并请求就自动检查，有问题这个请求就不能被合入，再添以邮件通知告警等功能，则可对项目实现一次配置，持续监察。</p><p>    问题在于该工具的使用条件需要满足 Node 版本大于 12，调研后发现许多产品线的 Runner 中打包项目的 Node 版本并不满足此要求，因此<strong>远程扫描</strong>这个功能便应运而生。</p><p>远程扫描功能整个过程是：</p><ul><li>cli 将本地的代码发送至服务端进行扫描</li><li>服务端扫描代码（等价于在本地扫描代码，只是执行环境在服务端），返回扫描结果</li></ul><p>    很显然如果代码量较大，则压缩传输和服务端扫描都需要花费一定的时间，但使用者关注的只是报告结果，这个结果过会儿去报告平台上去查阅即可，因此扫描的这部分时间并不值得等待。所以服务端的接口在获取到上传文件后便可向客户端返回响应告知其上传成功即可，扫描的工作在后台执行。像这种场景，任务队列便是解决这种类型问题的好办法。</p><p>    在 Nest.js <a href=https://docs.nestjs.com/techniques/queues>Queues</a> 中了解到 <a href=https://github.com/OptimalBits/bull>bull</a>，它基于 Redis 实现任务队列。下面是 Nest.js 中使用 bull 实现任务队列的一个例子。</p><p>先定义任务队列管理器：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Process</span>, <span style=color:#a6e22e>Processor</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/bull&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Job</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;bull&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Processor</span>(<span style=color:#e6db74>&#39;bcodeScan&#39;</span>)
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>ScanCodeProcessor</span> {
+
+ <span style=color:#75715e>// 某个任务队列
+</span><span style=color:#75715e></span> <span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Process</span>(<span style=color:#e6db74>&#39;startRemoteScan&#39;</span>)
+ <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>startScan</span> (<span style=color:#a6e22e>job</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Job</span>) {
+ 	<span style=color:#75715e>// 获取该任务处理相关的数据
+</span><span style=color:#75715e></span> 	<span style=color:#66d9ef>const</span> { <span style=color:#a6e22e>dataExample</span> } <span style=color:#f92672>=</span> <span style=color:#a6e22e>job</span>.<span style=color:#a6e22e>data</span>;
+	
+	<span style=color:#75715e>// do something to handle task...
+</span><span style=color:#75715e></span>	
+	<span style=color:#75715e>// 这里返回值会保存在 Redis 该记录的 returnValue 中，因此可以通过某个标识去获取任务结果
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>xxxx</span>;
+ }
+}
+</code></pre></div><p>在业务中使用该任务处理器：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>InjectQueue</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/bull&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Queue</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;bull&#39;</span>;
+
+<span style=color:#66d9ef>export</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>RemoteScanService</span> {
+  <span style=color:#75715e>// 注入任务管理器
+</span><span style=color:#75715e></span>  <span style=color:#a6e22e>constructor</span>(<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>InjectQueue</span>(<span style=color:#e6db74>&#39;bcodeScan&#39;</span>) <span style=color:#66d9ef>private</span> <span style=color:#a6e22e>readonly</span> <span style=color:#a6e22e>scanQueue</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Queue</span>) {}
+  
+  <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>handleUploadSource</span>(<span style=color:#a6e22e>fileData</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Buffer</span>, <span style=color:#a6e22e>bodyParams</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>UploadSourceParams</span>) {
+	<span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>scanQueue</span>.<span style=color:#a6e22e>add</span>(
+        <span style=color:#e6db74>&#39;startRemoteScan&#39;</span>,    <span style=color:#75715e>// 将任务添加到哪个队列
+</span><span style=color:#75715e></span>        {
+          <span style=color:#a6e22e>dataExample</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;test&#39;</span>    <span style=color:#75715e>// 数据
+</span><span style=color:#75715e></span>        },
+        {
+          <span style=color:#a6e22e>jobId</span><span style=color:#f92672>:</span> <span style=color:#f92672>+</span><span style=color:#66d9ef>new</span> Date(),    <span style=color:#75715e>// 自定义任务id
+</span><span style=color:#75715e></span>        },
+      );
+  }
+}
+</code></pre></div><p>在 Modules 中注册队列：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>BullModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/bull&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>Module</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/common&#39;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>BullModule</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;@nestjs/bull&#39;</span>;
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Module</span>({
+	<span style=color:#75715e>// ...
+</span><span style=color:#75715e></span>	
+	<span style=color:#a6e22e>imports</span><span style=color:#f92672>:</span> [
+		<span style=color:#a6e22e>BullModule</span>.<span style=color:#a6e22e>registerQueue</span>({
+		  <span style=color:#a6e22e>name</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;bcodeScan&#39;</span>,
+		  <span style=color:#a6e22e>redis</span><span style=color:#f92672>:</span> {
+			<span style=color:#a6e22e>host</span><span style=color:#f92672>:</span> <span style=color:#e6db74>&#39;localhost&#39;</span>,
+			<span style=color:#a6e22e>port</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>6379</span>,
+		  },
+		}),
+	]
+})
+</code></pre></div><p>比较简单的就实现了一个任务队列。回到问题本身，这里如何实现远程扫描？</p><p>我的解决方案：</p><ul><li>当待扫描源码上传且将其解压到指定目录后，在待扫描源码根目录下生成 <code>bcodeExcute.js</code> 文件，它的内容则是将开发者在本地执行的命令行转为 Javascript 代码</li><li>通过子进程的方式执行 <code>bcodeExcute.js</code> 来扫描</li></ul><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// 服务端处理上传源码的逻辑
+</span><span style=color:#75715e></span><span style=color:#66d9ef>async</span> <span style=color:#a6e22e>handleUploadSource</span>(<span style=color:#a6e22e>fileData</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Buffer</span>, <span style=color:#a6e22e>bodyParams</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>UploadSourceParams</span>) {
+	
+	<span style=color:#75715e>// 解压源码文件，获取目标目录
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>targetDir</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>depressFile</span>(<span style=color:#a6e22e>fileData</span>);
+	
+	<span style=color:#75715e>// 在待扫描源码根目录下生成 bcodeExcute.js 文件
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>genScanScode</span>(<span style=color:#a6e22e>targetDir</span>);
+	
+	<span style=color:#75715e>// 任务队列新增任务
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>this</span>.<span style=color:#a6e22e>scanQueue</span>.<span style=color:#a6e22e>add</span>(
+        <span style=color:#e6db74>&#39;startRemoteScan&#39;</span>,    <span style=color:#75715e>// 将任务添加到哪个队列
+</span><span style=color:#75715e></span>        {
+          <span style=color:#a6e22e>targetDir</span>    <span style=color:#75715e>// 待扫描源码目录
+</span><span style=color:#75715e></span>        },
+        {
+          <span style=color:#a6e22e>jobId</span><span style=color:#f92672>:</span> <span style=color:#f92672>+</span><span style=color:#66d9ef>new</span> Date(),    <span style=color:#75715e>// 自定义任务id
+</span><span style=color:#75715e></span>        },
+      );
+  }
+</code></pre></div><p>我们知道开发的命令行工具的原理是解析外部输入命令，调用功能函数来执行操作，因此此处只需要调用 bcode 暴露出来的 run 方法，即可将命令行转为同等功能的 Javascript 代码来执行。生成的 <code>bcodeExcute.js</code> 内容如下：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// 生成的bcodeExcute.js
+</span><span style=color:#75715e></span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>genScanScode</span> <span style=color:#f92672>=</span> (<span style=color:#a6e22e>targetDir</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>, <span style=color:#a6e22e>scanDir</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>, <span style=color:#a6e22e>config</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>) =&gt; {
+  <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>code</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`
+</span><span style=color:#e6db74>  const run = require(&#39;bcode&#39;);
+</span><span style=color:#e6db74>
+</span><span style=color:#e6db74>  process.on(&#39;message&#39;, async ({params}) =&gt; {
+</span><span style=color:#e6db74>    const scanMark = await run(
+</span><span style=color:#e6db74>      JSON.parse(params),
+</span><span style=color:#e6db74>      true,
+</span><span style=color:#e6db74>    );
+</span><span style=color:#e6db74>
+</span><span style=color:#e6db74>    process.send(scanMark);
+</span><span style=color:#e6db74>  });
+</span><span style=color:#e6db74>  `</span>;
+
+  <span style=color:#a6e22e>fs</span>.<span style=color:#a6e22e>writeFileSync</span>(<span style=color:#a6e22e>path</span>.<span style=color:#a6e22e>resolve</span>(<span style=color:#a6e22e>targetDir</span>, <span style=color:#e6db74>&#39;bcodeExcute.js&#39;</span>), <span style=color:#a6e22e>code</span>);
+};
+</code></pre></div><p>接下来在该任务队列的处理逻辑里，实现父子进程通信执行脚本文件。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>treeKill</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;tree-kill&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>as</span> <span style=color:#a6e22e>Redis</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;ioredis&#39;</span>;
+<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>redisClient</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Redis</span>({
+  <span style=color:#a6e22e>db</span><span style=color:#f92672>:</span> <span style=color:#ae81ff>0</span>,
+});
+
+<span style=color:#960050;background-color:#1e0010>@</span><span style=color:#a6e22e>Process</span>(<span style=color:#e6db74>&#39;startRemoteScan&#39;</span>)
+ <span style=color:#66d9ef>async</span> <span style=color:#a6e22e>startScan</span> (<span style=color:#a6e22e>job</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Job</span>) {
+ 	<span style=color:#75715e>// 获取待扫描源码目录
+</span><span style=color:#75715e></span> 	<span style=color:#66d9ef>const</span> { <span style=color:#a6e22e>targetDir</span>, <span style=color:#a6e22e>params</span> } <span style=color:#f92672>=</span> <span style=color:#a6e22e>job</span>.<span style=color:#a6e22e>data</span>;
+	
+	<span style=color:#75715e>// 执行远程扫描
+</span><span style=color:#75715e></span>	
+	<span style=color:#75715e>// fork 的方式创建子进程
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>p</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>fork</span>(<span style=color:#a6e22e>forkPath</span>, {
+      <span style=color:#a6e22e>cwd</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>targetDir</span>,    <span style=color:#75715e>// 指定该脚本 process.cwd 到源码目录
+</span><span style=color:#75715e></span>    });
+	
+	<span style=color:#75715e>// 发送子进程所需要的数据
+</span><span style=color:#75715e></span>    <span style=color:#a6e22e>p</span>.<span style=color:#a6e22e>send</span>({
+      <span style=color:#a6e22e>scanDir</span>,
+      <span style=color:#a6e22e>params</span>,
+    });
+
+    <span style=color:#a6e22e>p</span>.<span style=color:#a6e22e>on</span>(<span style=color:#e6db74>&#39;exit&#39;</span>, (<span style=color:#a6e22e>code</span>, <span style=color:#a6e22e>singal</span>) =&gt; {
+      <span style=color:#75715e>//  子进程退出
+</span><span style=color:#75715e></span>    });
+	
+	<span style=color:#75715e>// 子进程出错
+</span><span style=color:#75715e></span>    <span style=color:#a6e22e>p</span>.<span style=color:#a6e22e>on</span>(<span style=color:#e6db74>&#39;error&#39;</span>, (<span style=color:#a6e22e>error</span>) =&gt; {
+	  
+	  <span style=color:#75715e>// 将错误信息记录在该任务redis数据内
+</span><span style=color:#75715e></span>      <span style=color:#a6e22e>redisClient</span>.<span style=color:#a6e22e>hmset</span>(<span style=color:#e6db74>`bull:bcodeScan:</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>job</span>.<span style=color:#a6e22e>id</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>, {
+        <span style=color:#a6e22e>errorInfo</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>error</span>.<span style=color:#a6e22e>message</span>,
+      });
+	  
+	  <span style=color:#75715e>// 退出子进程
+</span><span style=color:#75715e></span>      <span style=color:#a6e22e>treeKill</span>(<span style=color:#a6e22e>p</span>.<span style=color:#a6e22e>pid</span>);
+    });
+	
+	<span style=color:#75715e>// 子进程消息
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>p</span>.<span style=color:#a6e22e>on</span>(<span style=color:#e6db74>&#39;message&#39;</span>, <span style=color:#66d9ef>async</span> (<span style=color:#a6e22e>scanMark</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>) =&gt; {
+	  <span style=color:#75715e>// 成功，将结果记录在该记录内
+</span><span style=color:#75715e></span>      <span style=color:#a6e22e>redisClient</span>.<span style=color:#a6e22e>hmset</span>(<span style=color:#e6db74>`bull:bcodeScan:</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>job</span>.<span style=color:#a6e22e>id</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>, {
+        <span style=color:#a6e22e>returnvalue</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>scanMark</span>,
+      });
+	  
+	  <span style=color:#75715e>// ... 做一些扫描成功后的事情，如邮件通知
+</span><span style=color:#75715e></span>	  
+	  
+	  <span style=color:#a6e22e>treeKill</span>(<span style=color:#a6e22e>p</span>.<span style=color:#a6e22e>pid</span>);
+	});
+ }
+</code></pre></div><h4>Comments:</h4><div id=cusdis_thread data-host=https://cusdis.com data-app-id=a2f9224a-c294-4108-998e-c8818b5dec9e data-page-id=cocacolf-blog data-page-url=https://cocacolf.github.io data-page-title="my blog"></div><script async defer src=https://cusdis.com/js/cusdis.es.js></script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>
