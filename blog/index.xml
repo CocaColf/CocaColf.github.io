@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on CocaColf</title><link>https://cocacolf.github.io/blog/</link><description>Recent content in Blogs on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 13 Oct 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>制定你的GitLab流水线任务</title><link>https://cocacolf.github.io/blog/%E5%90%88%E5%85%A5npm%E5%8C%85%E5%88%B0cicd/</link><pubDate>Wed, 13 Oct 2021 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E5%90%88%E5%85%A5npm%E5%8C%85%E5%88%B0cicd/</guid><description>最近要将开发的 npm 包合入 CICD 流水线里，摸索着完成了这个搭建。
-本文默认你已了解 CICD 是什么并 GitLab 具备必要条件，如可用的 Runner。
+本文默认你已了解 CICD 是什么，并且 GitLab 具备必要条件：如可用的 Runner。
  一个流水线服务需要以下几个基本要素：
 .gitlab-ci.yml 文件 可用的 Runner 执行某个流水线任务的脚本文件 编写配置文件和脚本  .gitlab-ci.yml 文件是必须的，它定义了流水线任务如何执行。而我们的任务肯定要在某个环境中执行，Runner 就是一个具备运行条件的环境，可能是某个服务器，也可能是某个 Docker 容器，这里不涉及 Runner 的搭建，因此默认已经有可用的 Runner。
 下面是一个示例文件：
