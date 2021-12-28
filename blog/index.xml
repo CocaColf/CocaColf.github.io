@@ -1,4 +1,24 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on CocaColf</title><link>https://cocacolf.github.io/blog/</link><description>Recent content in Blogs on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 23 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>颈椎病缓解和预防</title><link>https://cocacolf.github.io/blog/%E9%A2%88%E6%A4%8E%E7%97%85%E7%BC%93%E8%A7%A3%E5%92%8C%E9%A2%84%E9%98%B2/</link><pubDate>Thu, 23 Dec 2021 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E9%A2%88%E6%A4%8E%E7%97%85%E7%BC%93%E8%A7%A3%E5%92%8C%E9%A2%84%E9%98%B2/</guid><description>最近感觉不太好，几个问题：
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on CocaColf</title><link>https://cocacolf.github.io/blog/</link><description>Recent content in Blogs on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 28 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>代码质量检测工具服务端设计</title><link>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7%E6%9C%8D%E5%8A%A1%E7%AB%AF/</link><pubDate>Tue, 28 Dec 2021 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7%E6%9C%8D%E5%8A%A1%E7%AB%AF/</guid><description>TL;DR  今年很多时间都在开发和维护代码质量检测工具，到现在已经稳定运行了两个多月。之前写过它的 cli 端，本文是关于支撑该 cli 端以及质量报告平台的服务端的设计。它由设计文档简化精炼而来，作为个人记录和回顾所用。代码质量检测服务端开发的那段时间是我非常高效、聪明、有激情的一段时间，我很感谢它带给我的快乐。每个软件开发工程师在自己的编码生涯里都会有自己的代表作，它不一定有多厉害。你报之它以你的时间、智慧、苦恼，它报之你以喜悦和成就感，它让你感知到自己的能力和成长，让你在某些场合下嘴里滔滔不绝，眼里四射光芒。我喜欢这样的作品，我喜欢这样的过程，我喜欢这样的回忆。
+需求分析  如果有阅读过之前写的代码质量检测工具可能会对 bcode 有印象，但这里我还是简单描述一下：代码质量检测工具的起点是一个命令行工具，安装且在代码目录下执行 bcode check [文件(夹)] 后会扫描代码并生成一系列报告文件提供给服务端，服务端承载后续的工作，同个项目的扫描记录和数据分析会以报告汇总的形式在 Web 平台上查看。
+如下导图所示，需求按照三种场景来进行分析。
+由于无法从内网捕获截图演示，这里对标注的几点进行扩展解释，序号和导图中一致。
+为了让工具更好的自动化，此工具将和 CICD 结合使用。然而许多产品线的流水线环境中 Node 版本过低，因此提供了远程扫描功能。
+bcode 的使用很简单，一行命令即可。但会存在较复杂的场景，比如某些文件要忽略检查；甚至每个维度都有单独的忽略文件规则，因此为了方便使用，可以将这些规则定义在约定的配置文件(bcode.config.js)中，执行命令时工具会去寻找和读取该配置。我们在 web 平台上项目设置里也提供了这些参数的设置，因此这个配置文件省略，每次工具扫描时会从服务端获取该项目的配置。（还是很贴心的吧）
+bcode 有个维度是拼写检查，那么有很多单词是词典非法但大众默认合法的（比如 nums），所以有项目词库这种需求出现。每次扫描时服务端会下发单词词库，cli 端扫描时会将这些单词当作合法单词。
+扫描结束后，会根据配置的通知方式将报告结果进行通知。
+将需求进行收敛后，得到如下的功能点：
+大部分功能都是比较简单的，下面内容聚焦在几个主要的功能模块上。
+整体静态结构
+模块
+说明
+扫描模块
+主要处理扫描相关的工作：
+1. Cli 扫描上报的文件处理
+2. 扫描数据处理
+3.远程扫描
+词库管理
+主要处理词库相关是事情：
+1.</description></item><item><title>颈椎病缓解和预防</title><link>https://cocacolf.github.io/blog/%E9%A2%88%E6%A4%8E%E7%97%85%E7%BC%93%E8%A7%A3%E5%92%8C%E9%A2%84%E9%98%B2/</link><pubDate>Thu, 23 Dec 2021 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E9%A2%88%E6%A4%8E%E7%97%85%E7%BC%93%E8%A7%A3%E5%92%8C%E9%A2%84%E9%98%B2/</guid><description>最近感觉不太好，几个问题：
 左肩背部有点酸痛 嗓子有异物感，尤其是睡觉躺着略微的窒息感影响呼吸 早上起来后右手酸软无力，一整天都有一种麻的感觉 脖子右边有痛感，且摸起来明显比左边要偏僵硬 有点晕，整天都有犯困的感觉，但实际上睡眠时间充足  我怀疑是颈椎病，于是前天上午查了很久相关资料，果然印证了猜测，这是中等程度的颈椎病现象。手臂酸麻是因为神经压迫；大脑昏沉是压迫血管影响脑部供血。看了一下别人的分享，发现去医院可能有以下一些治疗方案：
 先拍片，核磁共振/CT，确定严重程度和劲椎病类型 开膏药（普遍反映效果不怎么样） 经常去医院进行牵引加推拿，时间周期比较长 叫你回去多锻炼；跳颈椎康复操 动手术（非常严重的情况下）  同时也了解到颈椎病基本只能缓解，完全康复很难。
  我的成因主要还是因为长期以来的部分不良生活姿势：
