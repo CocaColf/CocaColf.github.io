@@ -1,0 +1,113 @@
+<!doctype html><html lang=en-us><script>var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?9fb3cda71a61f7006356f0c75fac487d";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();</script><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Node工具库性能提升 - CocaColf</title><meta property="og:title" content="Node工具库性能提升 - CocaColf"><meta name=twitter:card content="summary"><meta property="description" content=" 本文记录了最近将 Node 工具 coderfly 性能提升 55.8% 的过程。主要优化手段为：
+[&amp;hellip;] 可以在这篇博文了解 coderfly
+[&amp;hellip;]  项目含有 3279 个有效文件，所有变更文件实际变更的函数为 74 个，性能情况如下：
+[&amp;hellip;] time node coderfly_performance.js # 搜索配置文件：0.002 # 获 &amp;hellip;"><meta property="og:description" content=" 本文记录了最近将 Node 工具 coderfly 性能提升 55.8% 的过程。主要优化手段为：
+[&amp;hellip;] 可以在这篇博文了解 coderfly
+[&amp;hellip;]  项目含有 3279 个有效文件，所有变更文件实际变更的函数为 74 个，性能情况如下：
+[&amp;hellip;] time node coderfly_performance.js # 搜索配置文件：0.002 # 获 &amp;hellip;"><link href=//cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/style.css><link rel=stylesheet href=/css/fonts.css></head><body class=blog><header class=masthead><h1><a href=/>CocaColf</a></h1><p class=tagline>庭前桃李满，院外小径芳</p><nav class=menu><input id=menu-check type=checkbox hidden>
+<label id=menu-label for=menu-check class=unselectable hidden><span class="icon close-icon">✕</span>
+<span class="icon open-icon">☰</span>
+<span class=text>Menu</span></label><ul><li><a href=/tags/writing/>文字</a></li><li><a href=/tags/technical/>技术</a></li><li><a href=/about/>关于</a></li><li><a href=/tags/>标签</a></li><li><a href=/index.xml>订阅</a></li></ul></nav></header><article class=main><header class=title><h1>Node工具库性能提升</h1><h3>2022-05-18</h3><hr></header><h2 id=tldr>TL;DR</h2><p>  本文记录了最近将 Node 工具 <a href=https://github.com/CocaColf/coderfly>coderfly</a> 性能提升 55.8% 的过程。主要优化手段为：</p><ul><li>Node.js 多线程：<code>work_threads</code></li><li>增加缓存</li><li>合理的编写异步代码</li></ul><h2 id=优化前性能情况>优化前性能情况</h2><blockquote><p>可以在<a href=https://cocacolf.vercel.app/blog/%E4%BB%A3%E7%A0%81%E6%94%B9%E5%8A%A8%E5%85%B3%E8%81%94%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7/>这篇博文</a>了解 coderfly</p></blockquote><p>  项目含有 3279 个有效文件，所有变更文件实际变更的函数为 74 个，性能情况如下：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>time node coderfly_performance.js
+
+<span style=color:#75715e># 搜索配置文件：0.002</span>
+<span style=color:#75715e># 获取函数变更耗时：0.641</span>
+<span style=color:#75715e># 文件过滤耗时：0.395</span>
+<span style=color:#75715e># 一共需要处理 3279 个文件</span>
+<span style=color:#75715e># 构建文件树耗时：37.692</span>
+<span style=color:#75715e># 需要搜索的目标函数个数：74 个</span>
+<span style=color:#75715e># 搜索耗时：0.581</span>
+
+<span style=color:#75715e># 总耗时：39.314</span>
+</code></pre></div><p>可以看到耗时集中于「函数树构建」。</p><h2 id=为什么慢>为什么慢</h2><p>  函数树的构建主要对每一个文件做如下几个工作：</p><ul><li>将文件解析为 AST，遍历 AST 提取所有函数和函数内部的被调用函数信息</li><li>解析 Vue 文件的 Template AST，将节点中疑似使用的函数提取出来</li><li>在遍历文件 AST 时同时会获取模块（依赖）导入信息、Mixin 信息</li><li>处理完上述内容后，会对每个文件再进行一次处理，将所有函数的来源路径都确定</li></ul><p>  将这些工作的总耗时统计出来，平均下来每个耗时大概是 0.007 秒，但积少成多。以 3000 个文件计算达到了 <code>0.007 * 3000 = 21</code> 秒。</p><p>这部分的代码很简单，就是 for 循环所有文件。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>let</span> <span style=color:#a6e22e>tree</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>FileInfoTree</span> <span style=color:#f92672>=</span> {};
+
+<span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>file</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>files</span>) {
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>fileInfo</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>getFileInfo</span>(<span style=color:#a6e22e>file</span>, <span style=color:#a6e22e>options</span>);
+    <span style=color:#a6e22e>tree</span>[<span style=color:#a6e22e>file</span>] <span style=color:#f92672>=</span> <span style=color:#a6e22e>fileInfo</span>;
+}
+</code></pre></div><p>也就是说这个时间复杂度是 <code>O(files count)</code>。</p><p>问题原因知道了，想法随之而来：由一个一个处理，改成同时处理多个文件。</p><h2 id=多线程方式生成文件树>多线程方式生成文件树</h2><p>  Node.js 中，由 Libuv 提供了事件轮询机制，因此在「io 密集型」处理上，不用太担心性能，但是在「CPU 密集型」问题上，由于 JavaScript 是单线程，因此这种耗时操作会阻塞主线程，导致整体耗时增加，同时也无法有效的利用执行环境的多核优势。对于这种「CPU 密集型」问题，在 Node.js 中有两种方案，一种是使用 <code>children_process</code> 或者 <code>cluster</code> 开启多进程进行计算；另一种是使用 <code>worker_thread</code> 开启多线程进行计算。这里选择更轻量级的 <code>worker_threads</code>。</p><p><strong>重构</strong></p><p>使用 <code>worker_threads</code> 重构这段循环代码：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// parent worker
+</span><span style=color:#75715e>// run_worker.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>cpus</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;os&#39;</span>;
+<span style=color:#66d9ef>import</span> <span style=color:#a6e22e>path</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#39;path&#39;</span>;
+
+<span style=color:#66d9ef>function</span> <span style=color:#a6e22e>getFileInfoWorker</span> (<span style=color:#a6e22e>files</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>string</span>[], <span style=color:#a6e22e>options</span><span style=color:#f92672>?:</span> <span style=color:#a6e22e>GetTreeOptions</span>)<span style=color:#f92672>:</span> Promise<span style=color:#f92672>&lt;</span><span style=color:#a6e22e>FileInfoTree</span><span style=color:#f92672>&gt;</span> {
+    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>new</span> Promise((<span style=color:#a6e22e>resolve</span>, <span style=color:#a6e22e>reject</span>) =&gt; {
+        <span style=color:#75715e>// 根据 cpu 数目将文件进行均分
+</span><span style=color:#75715e></span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>threadCount</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>cpus</span>().<span style=color:#a6e22e>length</span>;
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>everyWorkerFileCount</span> <span style=color:#f92672>=</span> Math.<span style=color:#a6e22e>ceil</span>(<span style=color:#a6e22e>files</span>.<span style=color:#a6e22e>length</span> <span style=color:#f92672>/</span> <span style=color:#a6e22e>threadCount</span>);
+
+        <span style=color:#75715e>// 线程池
+</span><span style=color:#75715e></span>        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>threads</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>Set</span><span style=color:#f92672>&lt;</span><span style=color:#a6e22e>Worker</span><span style=color:#f92672>&gt;</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Set</span>();
+
+        <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>let</span> <span style=color:#a6e22e>i</span> <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>i</span> <span style=color:#f92672>&lt;</span> <span style=color:#a6e22e>threadCount</span>; <span style=color:#a6e22e>i</span><span style=color:#f92672>++</span>) {
+            <span style=color:#a6e22e>threads</span>.<span style=color:#a6e22e>add</span>(<span style=color:#66d9ef>new</span> <span style=color:#a6e22e>Worker</span>(<span style=color:#a6e22e>path</span>.<span style=color:#a6e22e>resolve</span>(<span style=color:#a6e22e>__dirname</span>, <span style=color:#e6db74>&#39;./get_file_info_thread.js&#39;</span>), {
+                <span style=color:#a6e22e>workerData</span><span style=color:#f92672>:</span> {
+                    <span style=color:#a6e22e>files</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>files</span>.<span style=color:#a6e22e>splice</span>(<span style=color:#ae81ff>0</span>, <span style=color:#a6e22e>everyWorkerFileCount</span>),
+                    <span style=color:#a6e22e>options</span>,
+                }
+            }));
+        }
+
+        <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>worker</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>threads</span>) {
+            <span style=color:#a6e22e>worker</span>.<span style=color:#a6e22e>on</span>(<span style=color:#e6db74>&#39;error&#39;</span>, (<span style=color:#a6e22e>err</span>) =&gt; {
+                <span style=color:#a6e22e>reject</span>(<span style=color:#66d9ef>new</span> Error(<span style=color:#e6db74>`worker stopped with </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>err</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>));
+            });
+
+            <span style=color:#a6e22e>worker</span>.<span style=color:#a6e22e>on</span>(<span style=color:#e6db74>&#39;exit&#39;</span>, (<span style=color:#a6e22e>code</span>) =&gt; {
+                <span style=color:#a6e22e>threads</span>.<span style=color:#66d9ef>delete</span>(<span style=color:#a6e22e>worker</span>);
+
+                <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>code</span> <span style=color:#f92672>!==</span> <span style=color:#ae81ff>0</span>) {
+                    <span style=color:#a6e22e>reject</span>(<span style=color:#66d9ef>new</span> Error(<span style=color:#e6db74>`stopped with  </span><span style=color:#e6db74>${</span><span style=color:#a6e22e>code</span><span style=color:#e6db74>}</span><span style=color:#e6db74> exit code`</span>))
+                }
+
+                <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>threads</span>.<span style=color:#a6e22e>size</span> <span style=color:#f92672>===</span> <span style=color:#ae81ff>0</span>) {
+                    <span style=color:#a6e22e>resolve</span>(<span style=color:#a6e22e>tree</span>);
+                }
+            })
+    
+            <span style=color:#a6e22e>worker</span>.<span style=color:#a6e22e>on</span>(<span style=color:#e6db74>&#39;message&#39;</span>, (<span style=color:#a6e22e>msg</span>) =&gt; {
+                Object.<span style=color:#a6e22e>assign</span>(<span style=color:#a6e22e>tree</span>, <span style=color:#a6e22e>msg</span>);
+            });
+        }
+    });
+}
+</code></pre></div><p>每一个 <code>child worker</code> 执行任务并通过 <a href=https://nodejs.org/api/worker_threads.html#worker_threads_class_messagechannel>message channel</a> 将结果发给 <code>parent worker</code>：</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#75715e>// get_file_info_thread.ts
+</span><span style=color:#75715e></span><span style=color:#66d9ef>import</span> <span style=color:#a6e22e>fs</span> <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;fs&#34;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>parentPort</span>, <span style=color:#a6e22e>workerData</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;worker_threads&#34;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>FileInfoTree</span>, <span style=color:#a6e22e>GetFileInfoWorkerData</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;../type&#34;</span>;
+<span style=color:#66d9ef>import</span> { <span style=color:#a6e22e>getFileInfo</span> } <span style=color:#a6e22e>from</span> <span style=color:#e6db74>&#34;../utils/handle_file_utils.js&#34;</span>;
+
+<span style=color:#a6e22e>parentPort</span><span style=color:#f92672>?</span>.<span style=color:#a6e22e>postMessage</span>(<span style=color:#a6e22e>_getFilesInfo</span>(<span style=color:#a6e22e>workerData</span>));
+
+<span style=color:#66d9ef>function</span> <span style=color:#a6e22e>_getFilesInfo</span> (<span style=color:#a6e22e>workerData</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>GetFileInfoWorkerData</span>) {
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>currentTree</span><span style=color:#f92672>:</span> <span style=color:#a6e22e>FileInfoTree</span> <span style=color:#f92672>=</span> {};
+
+    <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>file</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>workerData</span>.<span style=color:#a6e22e>files</span>) {
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>fileInfo</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>getFileInfo</span>(<span style=color:#a6e22e>file</span>, <span style=color:#a6e22e>workerData</span>.<span style=color:#a6e22e>options</span>);
+        <span style=color:#a6e22e>currentTree</span>[<span style=color:#a6e22e>file</span>] <span style=color:#f92672>=</span> <span style=color:#a6e22e>fileInfo</span>;
+    }
+
+    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>currentTree</span>;
+}
+</code></pre></div><p><strong>效果</strong></p><p>  使用 <code>worker_threads</code> 重构后，「构建文件树」的耗时由 37.692 秒降低到了 12.253 秒，提升 67.5%。可以预见的是，当文件数目更大时，这个效果会更突出。</p><h2 id=增加缓存>增加缓存</h2><p>  在第一次执行扫描后，第二次扫描可能 99% 的文件都是没有变化的，不应该再重新去构建它们的文件树，因此需要增加「缓存」来记录状态。</p><p>  做法很简单，只需要在第一次扫描时，本地生成一份以 <code>key-value</code> 形式记录 <code>文件路径-最后一次编辑时间</code> 的 json 文件， 第二次扫描时用「最后一次编辑时间」作为判断依据即可。如果没有更改，则使用旧数据；已更改方才需要重新构建。这个工作放在 <code>child worker</code> 中即可。</p><p>  增加缓存后时间从 12.253 秒降低到了 3.24 秒。</p><h2 id=合理的编写异步代码>合理的编写异步代码</h2><p>  对于 JavaScript 开发者来说，async await 的出现让异步代码变得更加的清晰，可以写出很多好看的代码。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>test</span> (<span style=color:#a6e22e>items</span>) {
+    <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>const</span> <span style=color:#a6e22e>item</span> <span style=color:#66d9ef>of</span> <span style=color:#a6e22e>items</span>) {
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>userInfo</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>getUserInfo</span>(<span style=color:#a6e22e>item</span>);
+        <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>someOtherInfo</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>getOtherInfo</span>(<span style=color:#a6e22e>item</span>);
+     
+        <span style=color:#75715e>// do something
+</span><span style=color:#75715e></span>    }
+}
+</code></pre></div><p>但是在实际开发中，我们常常忽略了这种写法同步阻塞的性能问题。这时候应该想起 Promise 本身提供的「并发」能力。</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>test</span> (<span style=color:#a6e22e>items</span>) {
+     
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>allPromiseRes</span> <span style=color:#f92672>=</span>  <span style=color:#66d9ef>await</span> Promise.<span style=color:#a6e22e>all</span>(<span style=color:#a6e22e>items</span>.<span style=color:#a6e22e>map</span>(<span style=color:#a6e22e>item</span> =&gt; {
+        <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>mergeLogic</span>(<span style=color:#a6e22e>item</span>);
+    }));
+ 
+}
+ 
+<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>mergeLogic</span> (<span style=color:#a6e22e>item</span>) {
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>userInfo</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>getUserInfo</span>(<span style=color:#a6e22e>item</span>);
+    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>someOtherInfo</span> <span style=color:#f92672>=</span> <span style=color:#66d9ef>await</span> <span style=color:#a6e22e>getOtherInfo</span>(<span style=color:#a6e22e>item</span>);
+ 
+    <span style=color:#75715e>// do something
+</span><span style=color:#75715e></span>}
+</code></pre></div><p>在一个 <code>for await</code> 写法的计算密集型操作中，15 个输入计算耗时 7.791 秒，改写为 <code>Promise.all</code> 后时间降低到 2.03 秒，效果还是很好的。</p><h2 id=后话>后话</h2><p>  在大多数普通业务开发中，大多数逻辑执行耗时并不长，优雅的写法和简单的逻辑结构先行，并不需要非常关注性能问题。我们应该在日常开发和学习中有意识的去了解和对比不同写法、不同 API 的性能差异和不良实践；去关注常用的性能优化手段，这可以更有效的帮助我们写出高性能的代码和排查性能问题。</p><h4>Comments:</h4><div id=cusdis_thread data-host=https://cusdis.com data-app-id=a2f9224a-c294-4108-998e-c8818b5dec9e data-page-id=9aa21ed1bec61438696ed1affc66d4c1 data-page-url=https://cocacolf.github.io/blog/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E4%BC%98%E5%8C%96node%E5%BA%94%E7%94%A8/ data-page-title=Node工具库性能提升></div><script async defer src=https://cusdis.com/js/cusdis.es.js></script><footer><script src=//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/javascript.min.js></script><script src=//cdn.bootcss.com/highlight.js/9.12.0/languages/js.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();</script><hr><div class=copyright>© CocaColf | <a href=https://github.com/CocaColf>Github</a></div></footer></article></body></html>
