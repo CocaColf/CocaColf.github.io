@@ -1,4 +1,26 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>technical on CocaColf</title><link>https://cocacolf.github.io/tags/technical/</link><description>Recent content in technical on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 28 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/tags/technical/index.xml" rel="self" type="application/rss+xml"/><item><title>代码质量检测工具服务端设计</title><link>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7%E6%9C%8D%E5%8A%A1%E7%AB%AF/</link><pubDate>Tue, 28 Dec 2021 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7%E6%9C%8D%E5%8A%A1%E7%AB%AF/</guid><description>TL;DR  今年很多时间都在开发和维护代码质量检测工具，到现在已经稳定运行了两个多月。之前写过它的 cli 端，本文是关于支撑该 cli 端以及质量报告平台的服务端的设计。它由设计文档简化精炼而来，作为个人记录和回顾所用。代码质量检测服务端开发的那段时间是我非常高效、聪明、有激情的一段时间，我很感谢它带给我的快乐。每个软件开发工程师在自己的编码生涯里都会有自己的代表作，它不一定有多厉害。你报之它以你的时间、智慧、苦恼，它报之你以喜悦和成就感，它让你感知到自己的能力和成长，让你在某些场合下嘴里滔滔不绝，眼里四射光芒。我喜欢这样的作品，我喜欢这样的过程，我喜欢这样的回忆。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>technical on CocaColf</title><link>https://cocacolf.github.io/tags/technical/</link><description>Recent content in technical on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 18 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/tags/technical/index.xml" rel="self" type="application/rss+xml"/><item><title>Node工具库性能提升</title><link>https://cocacolf.github.io/blog/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E4%BC%98%E5%8C%96node%E5%BA%94%E7%94%A8/</link><pubDate>Wed, 18 May 2022 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E4%BC%98%E5%8C%96node%E5%BA%94%E7%94%A8/</guid><description>TL;DR  本文记录了最近将 Node 工具 coderfly 性能提升 55.8% 的过程。主要优化手段为：
+Node.js 多线程：work_threads 增加缓存 合理的编写异步代码 优化前性能情况 可以在这篇博文了解 coderfly
+ 项目含有 3279 个有效文件，所有变更文件实际变更的函数为 74 个，性能情况如下：
+time node coderfly_performance.js # 搜索配置文件：0.002 # 获取函数变更耗时：0.641 # 文件过滤耗时：0.395 # 一共需要处理 3279 个文件 # 构建文件树耗时：37.692 # 需要搜索的目标函数个数：74 个 # 搜索耗时：0.581 # 总耗时：39.314 可以看到耗时集中于「函数树构建」。
+为什么慢  函数树的构建主要对每一个文件做如下几个工作：
+将文件解析为 AST，遍历 AST 提取所有函数和函数内部的被调用函数信息 解析 Vue 文件的 Template AST，将节点中疑似使用的函数提取出来 在遍历文件 AST 时同时会获取模块（依赖）导入信息、Mixin 信息 处理完上述内容后，会对每个文件再进行一次处理，将所有函数的来源路径都确定  将这些工作的总耗时统计出来，平均下来每个耗时大概是 0.</description></item><item><title>函数级别的代码改动关联影响分析工具</title><link>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E6%94%B9%E5%8A%A8%E5%85%B3%E8%81%94%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7/</link><pubDate>Thu, 14 Apr 2022 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E6%94%B9%E5%8A%A8%E5%85%B3%E8%81%94%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7/</guid><description>TL;DR  本文记录了最近实现的前端代码改动关联分析工具的实现思路。该工具可以识别你的代码改动，从函数级别的颗粒度找到代码改动对其他函数或页面的影响，并输出影响报告，从而提高开发人员的测试效率和测试范围。可以在 GitHub 上查看其代码。
+背景  由于长期的业务迭代，业务代码规模越来越大，改动引发现象频发。我们修改一块老代码时，不是很清楚它是否会对其他模块产生影响。这时候许多人的做法是单纯测一下这个页面（功能），没问题就行了，提测下班；或者使用编辑器的搜索功能全局搜索一下某些关键信息，看这个修改的东西在哪里用到了，附带看一下有没有影响。
+ 如果当前修改的内容是独立的，或者用的地方不多，那么简单的测试往往也不会造成质量问题，但这种检查方式本身也不算高效，我们往往需要在代码文件里跳来跳去。因此如果有个工具，它可以识别你的修改，自动的给你找出你这个修改影响了哪些地方，是不是可以节省很多时间同时也提高自测质量呢？
+思路  我们的目的是根据代码的修改找到最终的影响面，这里有个很重要的词——「找」。拿什么找？找什么？
+拿什么找？
+ 拿什么找？拿代码的修改找。不过这个修改是零零碎碎的，我们是要追踪一个「数据变量」的变化导致的影响？我们是要追踪一个「函数变更」的影响？因此在做这个分析之前，我们需要先确定「颗粒度」。
+ 如果是以「数据变量」为颗粒度，这个颗粒度非常细，而且对于 JavaScript 这种静态语言来说，在纯代码文本层面要做数据变量的追踪是非常困难的。因此选择「函数」作为颗粒度是比较合适的，毕竟业务功能也是由一个一个的函数组合完成的。
+ 所以拿「函数」去找，也就是说颗粒度为函数级别。
+找什么？
+我们最终的目的是为了更好的测试，那么我作为一个前端开发人员，我关注的是：
+我这个函数被哪些函数调用 我这个函数或者函数调用链上的函数被用在页面上的哪个地方，即对页面功能有什么影响  所以要找「调用链」和「页面影响」。
+如何实现
+从目的出发，可以拆解出如下几件要做的事情：
+因为要知道当前哪些函数发生了变更，即影响因子，所以需要根据当前代码的修改（文件的变化）得出函数变化 因为要得到函数的调用链，所以要构建整个项目的函数调用关系 因为要知道函数变更对页面的影响，所以要提取页面上 html 中的变量使用 将影响因子作为输入，在函数调用关系和页面数据中找到影响面并输出 整体流程如下图所示：
+该工具当前只关注 JavaScript 和 Vue 技术栈的项目，所以后文都是针对这俩技术栈的情况来做的。
+文件变化得到函数变化 获得函数变化情况  只需要对修改前后的文件内容进行对比，就可以从文件变化中获得函数变化情况。比如之前文件中有某个函数，现在没了，那就说明这个函数被删除了；如果现在和之前都有，但是函数体内容变了，那就说明函数修改了。
+ 我们将 JavaScript 代码转为抽象语法树，遍历 JavaScript AST 并收集函数节点。集合中每个函数元素的定义如下：
+{ name: &amp;#39;function_name&amp;#39;, text: &amp;#39;function block content...&amp;#39; }  其中 name 是函数名称，这个可以在 AST 中获取到；text 是函数体的文本内容，这个似乎是无法在 AST 中拿到的，不过可以绕一下，先通过 AST 中 loc 属性拿到函数所在的起始行，然后再从文件中读取该范围内的文本内容来获得。</description></item><item><title>代码质量检测工具服务端设计</title><link>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7%E6%9C%8D%E5%8A%A1%E7%AB%AF/</link><pubDate>Tue, 28 Dec 2021 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F%E6%A3%80%E6%B5%8B%E5%B7%A5%E5%85%B7%E6%9C%8D%E5%8A%A1%E7%AB%AF/</guid><description>TL;DR  今年很多时间都在开发和维护代码质量检测工具，到现在已经稳定运行了两个多月。之前写过它的 cli 端，本文是关于支撑该 cli 端以及质量报告平台的服务端的设计。它由设计文档简化精炼而来，作为个人记录和回顾所用。代码质量检测服务端开发的那段时间是我非常高效、聪明、有激情的一段时间，我很感谢它带给我的快乐。每个软件开发工程师在自己的编码生涯里都会有自己的代表作，它不一定有多厉害。你报之它以你的时间、智慧、苦恼，它报之你以喜悦和成就感，它让你感知到自己的能力和成长，让你在某些场合下嘴里滔滔不绝，眼里四射光芒。我喜欢这样的作品，我喜欢这样的过程，我喜欢这样的回忆。
 需求分析  如果有阅读过之前写的代码质量检测工具可能会对 bcode 有印象，但这里我还是简单描述一下：代码质量检测工具的起点是一个命令行工具，安装且在代码目录下执行 bcode check [文件(夹)] 后会扫描代码并生成一系列报告文件提供给服务端，服务端承载后续的工作，同个项目的扫描记录和数据分析会以报告汇总的形式在 Web 平台上查看。
 如下导图所示，需求按照三种场景来进行分析。
 由于无法从内网捕获截图演示，这里对标注的几点进行扩展解释，序号和导图中一致。
