@@ -2,7 +2,7 @@
 编辑器功能 从图片可以看出来，编辑器渲染的主要内容是一张设计稿图片，图片中每一个识别出的组件由一个含有左上角文本名称的矩形绘制于上。这个编辑器主要功能如下：
 画布
 图形渲染 画布内容自适应画布大小 缩放：Ctrl + 滚轮 画布移动：SPACE + 鼠标 右键菜单 顶部工具栏：选择模式、鼠标绘制组件、撤销、重做、拖拽、帮助中心 快捷键操作 历史记录 图形
-拖拽移动 拉伸缩放 节点删除 节点变化信息和右侧面板联动 区域限制：节点的缩放、拖拽、绘制操作限制在底部图片区域内 右侧面板
+拖拽移动 拉伸缩放 节点删除 节点变化信息和右侧面板联动 区域限制：节点的缩放、拖拽、绘制操作限制在底部图片区域内 节点穿透选中 右侧面板
 节点的操作和右侧面板可以双向联动 下面主要记录开发过程中遇到的主要的问题和解决方式。
 自定义图形 Fabric.js 提供了 subclassing 扩展基本图形，比如矩形加文本就可以通过扩展矩形实现：
 fabric.ComponentRect = fabric.util.createClass(fabric.Rect, { type: &amp;#39;component-rect&amp;#39;, initialize: function (initializeOptions: fabric.IObjectOptions) { const options = { .</description></item><item><title>面试官视角的校招</title><link>https://cocacolf.github.io/blog/%E9%9D%A2%E8%AF%95%E5%AE%98%E8%A7%86%E8%A7%92%E7%9A%84%E6%A0%A1%E6%8B%9B/</link><pubDate>Fri, 23 Sep 2022 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E9%9D%A2%E8%AF%95%E5%AE%98%E8%A7%86%E8%A7%92%E7%9A%84%E6%A0%A1%E6%8B%9B/</guid><description>这个月是第一次以面试官的身份参加校招，至此已经参加三批校招（一次笔试为一批），我负责的是一面，共和 37 位候选人交流，其中 10 人通过本轮面试。下一批面试要到下个月了，因此很适合在这个节点记录一下这段体验。
