@@ -1,4 +1,28 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on CocaColf</title><link>https://cocacolf.github.io/blog/</link><description>Recent content in Blogs on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 24 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>视觉稿中的静态图片识别</title><link>https://cocacolf.github.io/blog/%E8%A7%86%E8%A7%89%E7%A8%BF%E4%B8%AD%E7%9A%84%E9%9D%99%E6%80%81%E5%9B%BE%E7%89%87%E8%AF%86%E5%88%AB/</link><pubDate>Wed, 24 May 2023 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E8%A7%86%E8%A7%89%E7%A8%BF%E4%B8%AD%E7%9A%84%E9%9D%99%E6%80%81%E5%9B%BE%E7%89%87%E8%AF%86%E5%88%AB/</guid><description>背景 网页上的静态图片从代码上来说，是如 &amp;lt;img src=&amp;quot;xxx&amp;quot; /&amp;gt; 这样的代码。因此在设计稿转代码时，需要知道设计稿里哪个地方是静态图片，同时将这个静态图片导出后生成对应的链接地址，这样生成的代码才能完整的运行起来看到页面效果。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on CocaColf</title><link>https://cocacolf.github.io/blog/</link><description>Recent content in Blogs on CocaColf</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 26 Dec 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://cocacolf.github.io/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>开发了设计稿规范检视工具</title><link>https://cocacolf.github.io/blog/%E8%AE%BE%E8%AE%A1%E7%A8%BF%E8%A7%84%E8%8C%83%E6%A3%80%E8%A7%86%E5%B7%A5%E5%85%B7/</link><pubDate>Tue, 26 Dec 2023 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E8%AE%BE%E8%AE%A1%E7%A8%BF%E8%A7%84%E8%8C%83%E6%A3%80%E8%A7%86%E5%B7%A5%E5%85%B7/</guid><description>背景 规范的设计稿对 D2C（设计稿生成代码）是非常重要的，如果存在许多层级错乱的节点、冗余的节点、交叉的节点，那么势必在 D2C 开发的过程中需要处理许多的异常节点的处理和计算，有很多异常场景很难通过代码的手段去解决，从而很难生成正确的高可用性的前端代码。因此 D2C 的实践过程中需要提炼出许多 D2C 的设计规范让设计师配合。
+同时，设计团队也有自己的设计规范，在设计师的日常设计中需要进行设计检视，类似于我们开发人员的 code review。间距、颜色等一一核对的检视是枯燥的。
+如果有个工具可以让设计师在设计自检或设计评审时一键检视存在的设计问题，那么无论对于设计稿的质量或者是设计效率都有很大的帮助。设计稿检视工具的需求应运而生。它就像是设计稿的 ESLint。
+很显然，由于两种不同角色对规范的不同要求，因此设计稿检视工具的规则会分为 D2C 规则和设计规则两种类型。
+整体效果 选中设计稿，使用设计稿检视插件一键检测
+检测完成自动打开检测报告
+检测报告以画板的形式展示（和设计软件一致的操作方式），在这里可以进行问题查看、问题忽略、问题过滤等操作，同一个设计稿被忽略的问题在下一次检视时将不会提示：
+历史记录和数据汇总
+所有的检视记录会按照「同一个版本」，「同一个设计稿」的维度进行聚合，同时会对这些记录进行数据分析和汇总：
+实现：整体流程 插件端
+用户在 Mastergo 设计稿页面上选中需要检视的设计稿后点击插件开始检测，插件会对设计稿进行节点提取（节点树）、图片导出等设计稿数据处理，将数据发送给服务端
+服务端
+服务端收到检视任务后，主要做几件事：
+对上报的设计稿数据做进一步必要的处理，比如将插件上报的图片 (base 64)转为静态资源存储，用于 AI 识别 将检视任务加入任务队列中，在任务队列中会对设计稿进行 AI 组件识别，得到组件识别结果。将这个和原始设计稿信息一起提供给「规范检测库」进行检视，获得检视结果 搜索相同的设计稿的历史记录，将这个设计稿以前处置（如某个问题被忽略）延续到本次检视操作；同时将相同的设计稿的检视结果进行合并 组件识别结果：
+UI 平台
+提供报告展示、问题处置、历史记录、管理员操作等功能。
+整体流程就是普通的 web 开发，毫无疑问最核心的功能和能力在于「规范检测库」。
+实现：规范检测库 输入数据 我们需要检测的对象按照场景划分为两种：设计稿原始节点类型和具体的场景组件。
+设计稿原始节点类型
+比如校验「TEXT 节点」的最小字号、「TEXT 节点」之间不能存在交叉、「子节点」大小不能超过「父容器」的大小。
+具体的场景组件
+表单、表格等具体场景我们是无法从设计稿原始节点中判断出来的，这也是服务端为什么对设计稿进行 AI 组件识别的原因。通过 AI 识别我们知道具体的（场景）组件的位置、大小。
+因此「规范检测库」的输入就是设计稿的原始节点（树）和设计稿组件识别结果。
+上下文环境 有些规则需要计算节点之间的关联关系，因此单个规则的输入不仅仅是当前节点。我们可以抽象一个 context 注入到每个规则中去，校验过程中所有规则共享。这种 context 的思想在各种库中非常常见。
+校验过程中需要不断地收集每个规则的校验结果，我们可以在 context 中增加一个 event emitter，规则将问题”广播出去“，然后统一由一个收集者负责接收广播，收集问题。</description></item><item><title>视觉稿中的静态图片识别</title><link>https://cocacolf.github.io/blog/%E8%A7%86%E8%A7%89%E7%A8%BF%E4%B8%AD%E7%9A%84%E9%9D%99%E6%80%81%E5%9B%BE%E7%89%87%E8%AF%86%E5%88%AB/</link><pubDate>Wed, 24 May 2023 00:00:00 +0000</pubDate><guid>https://cocacolf.github.io/blog/%E8%A7%86%E8%A7%89%E7%A8%BF%E4%B8%AD%E7%9A%84%E9%9D%99%E6%80%81%E5%9B%BE%E7%89%87%E8%AF%86%E5%88%AB/</guid><description>背景 网页上的静态图片从代码上来说，是如 &amp;lt;img src=&amp;quot;xxx&amp;quot; /&amp;gt; 这样的代码。因此在设计稿转代码时，需要知道设计稿里哪个地方是静态图片，同时将这个静态图片导出后生成对应的链接地址，这样生成的代码才能完整的运行起来看到页面效果。
 我司设计师使用的设计工具是 MasterGo。和其他设计工具无异，通过各种类型的节点裁切组合来创造图形。组合方式五花八门，设计师的绘图方式也可以千奇百怪，所以从直观感受来说一个静态图片内部节点的组成情况是非常复杂的。所以这个问题本质上是给你一个设计稿页面节点数据，判断哪些节点组合起来是静态图片。
 下面是 MasterGo 节点的类型和一个静态图片的节点组成的部分片段。
 思考&amp;amp;过程 众多的组合方式和绘图方法，意味着输入不固定、可能性无穷多，这种不确定性很大的问题仅通过编码手段来解决是否不太可行性呢？答案是否定的。第一，这种不确定性只是自己的感觉而已，有待证明；第二，如果有个解法可以覆盖其中的绝大多数场景，那么这个解决方案也是非常够用的；第三，可以添加限制条件，使得输入减少，往确定性高的方向靠拢，解决频率最高的场景。所以解决这个问题应当先立下要求（限定），再进行归纳，再提出解法。
