@@ -90,6 +90,11 @@ pre code {
 
 /* Lists */
 
+.year_title {
+  margin: 0;
+  text-align: left;
+}
+
 ul, ol {
   padding: 0 0 0 20px;
 }
@@ -101,11 +106,27 @@ li {
 
 ul.home_list {
   list-style: none;
+  margin-bottom: 32px;
 }
 ul.home_list li {
   margin-bottom: 16px;
 }
+ul.home_list li span.date {
+  color: #666;
+}
+ul.home_list li a.post-title {
+  border-bottom: none;
+}
+ul.home_list li a.post-title:hover {
+  border-bottom: 1px solid;
+}
 
+.menu-list {
+  list-style: none;
+}
+.menu-list:hover {
+  list-style: circle;
+}
 /* Links */
 
 a {
